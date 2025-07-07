@@ -35,38 +35,22 @@ function saveDesign($debtorInput,$imageInfo){
 
         $ext = pathinfo($img_name, PATHINFO_EXTENSION);
         $img_new = 'front_'.time(); //New image name
-        $path = "../uploads/" . $img_new . "." . $ext; //New path to move
-        $path_db = "uploads/" . $img_new . "." . $ext;
+        $path = "../desingImg/" . $img_new . "." . $ext; //New path to move
+        $path_db = "desingImg/" . $img_new . "." . $ext;
 
         move_uploaded_file($img_name_tmp, $path); // To move the image to user_images folder       
         
     }
 
-    if(isset($imageInfo['imageBack'])){
-
-        $img_nameBack = $imageInfo['imageBack']['name']; // To get file name
-        $img_name_tmpBack = $imageInfo['imageBack']['tmp_name']; // To get file name temporary location  
-        
-        $ext2 = pathinfo($img_nameBack, PATHINFO_EXTENSION);
-        $img_new2 = 'back_'.time(); //New image name
-        $pathBack = "../uploads/" . $img_new2 . "." . $ext2; //New path to move
-        $path_dback = "uploads/" . $img_new2 . "." . $ext2;
-
-        move_uploaded_file($img_name_tmpBack, $pathBack);
-    }
-
-
     $DesignName =  mysqli_real_escape_string($conn,$debtorInput['DesignName']);
     $Description =  mysqli_real_escape_string($conn,$debtorInput['Description']);
     $PricePerUnit =  mysqli_real_escape_string($conn,$debtorInput['PricePerUnit']);
     $DateAdded=  mysqli_real_escape_string($conn,$debtorInput['DateAdded']);
-    $ImagePath=  mysqli_real_escape_string($conn,$debtorInput['ImagePath']);
+    //$ImagePath=  mysqli_real_escape_string($conn,$debtorInput['path_db']);
     $CreateUser=  mysqli_real_escape_string($conn,$debtorInput['CreateUser']);
     $Active = 1;
 
-    ///Get the current Year
-
-    $currentYear = date("Y");
+   
 
     if(empty(trim($DesignName)))
     {
@@ -86,87 +70,32 @@ function saveDesign($debtorInput,$imageInfo){
     }  
     else
     {
-        $query1 = "SELECT * FROM `customerinfo` WHERE `NICNo` LIKE '%$NICNo%' AND Active='1'";
-        //var_dump($query1); exit;
-        $result1 = mysqli_query($conn,$query1);
-        $rowcount=mysqli_num_rows($result1);
+        //var_dump($path_db);exit;
 
+        $query = "INSERT INTO Designs (DesignName, Description, PricePerUnit, DateAdded, ImagePath, CreateUser, Active) 
+                  VALUES ('$DesignName', '$Description', '$PricePerUnit', '$DateAdded', '$path_db', '$CreateUser', '$Active')";
 
+        $result = mysqli_query($conn,$query);
 
-        if($rowcount > 0)
+        if($result)
         {
+            //var_dump($query);exit;
             $data = [
 
-                'status'=> 201,
-                'message'=> 'Already exist this customer',
+                'status'=> 200,
+                'message'=> 'Design saved Successfully',
             ];
-            header('HTTP/1.0 201 Created');
-            return json_encode($data);  
+            header('HTTP/1.0 200 Success');
+            return json_encode($data);
         }
-        else
-        {
+        else{
+            $data = [
 
-            $queryMaxID = "SELECT MAX(CIID) AS CusID FROM `customerinfo`";
-            $resultMaxID = mysqli_query($conn, $queryMaxID);
-
-            // Fetch the result as an associative array
-            $row = mysqli_fetch_assoc($resultMaxID);
-
-            // Get the CusID (maximum CIID)
-            $maxCIID = $row['CusID'];
-
-            $CusRegNo = "YW" . $currentYear . "-" .$maxCIID+1;
-            
-            //var_dump($CusRegNo);exit;
-
-            $query = "INSERT INTO customerinfo (
-                FullName, 
-                Address, 
-                NICNo, 
-                ContactNo1,
-                Gender, 
-                CreateUser,
-                ProfileImage,
-                NICFrontImg,
-                NICBackImg,
-                CusRegNo,
-                Active
-            ) VALUES (
-                '$FullName', 
-                '$Address', 
-                '$NICNo', 
-                '$ContactNo1', 
-                '$Gender', 
-                '$CreateUser',
-                '$path_dbProf',
-                '$path_db',
-                '$path_dback',
-                '$CusRegNo',
-                '$Active'
-            )";      
-            //var_dump($query);exit;
-            $result = mysqli_query($conn,$query);
-
-            if($result)
-            {
-                $data = [
-
-                    'status'=> 201,
-                    'message'=> 'Customer created Successfully',
-                ];
-                header('HTTP/1.0 201 Created');
-                return json_encode($data);
-            }
-            else
-            {
-                $data = [
-
-                    'status'=> 500,
-                    'message'=> 'Internal server Error',
-                ];
-                header('HTTP/1.0 500 Internal server Error');
-                return json_encode($data);
-            }  
+                'status'=> 500,
+                'message'=> 'Internal server Error',
+            ];
+            header('HTTP/1.0 500 Internal server Error');
+            return json_encode($data);
         }
         
     }
@@ -174,11 +103,16 @@ function saveDesign($debtorInput,$imageInfo){
     $conn->close();
 }
 
-function getDebtorList(){
+function getDesignById($designParam){
 
     global $conn;
 
-    $query = "SELECT * FROM customerinfo ";
+    if($debtorParams['DesignNo'] ==  null){
+
+        return error422('Enter your design Number');
+    }   
+
+    $query = "SELECT * FROM Designs WHERE Active = 1 AND DesignNo = '$designParam'";
     $query_run = mysqli_query($conn,$query);
     
     if ($query_run){
@@ -190,7 +124,56 @@ function getDebtorList(){
             $data = [
 
                 'status'=> 200,
-                'message'=> 'Debtors List Fetched Sucessfully',
+                'message'=> 'Designs List Fetched Sucessfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK ');
+            return json_encode($data);
+
+        }else
+        {
+            $data = [
+
+                'status'=> 404,
+                'message'=> 'No Designs Found',
+            ];
+            header('HTTP/1.0 404 No Designs Found');
+            return json_encode($data);
+
+        }
+
+    }
+    else{
+        
+        $data = [
+
+            'status'=> 500,
+            'message'=> 'Internal server Error',
+        ];
+        header('HTTP/1.0 500 Internal server Error');
+        return json_encode($data);
+
+    }
+
+}   
+
+function getDesingList(){
+
+    global $conn;
+
+    $query = "SELECT * FROM Designs WHERE Active = 1 ORDER BY DesignNo DESC";
+    $query_run = mysqli_query($conn,$query);
+    
+    if ($query_run){
+
+        if(mysqli_num_rows($query_run) > 0 ){
+
+            $res = mysqli_fetch_all($query_run,MYSQLI_ASSOC);
+
+            $data = [
+
+                'status'=> 200,
+                'message'=> 'Design List Fetched Sucessfully',
                 'data' => $res
             ];
             header('HTTP/1.0 200 OK ');
@@ -203,7 +186,7 @@ function getDebtorList(){
                 'status'=> 404,
                 'message'=> 'No Debtors Found',
             ];
-            header('HTTP/1.0 404 No Debtors Found');
+            header('HTTP/1.0 404 No Design Found');
             return json_encode($data);
 
         }

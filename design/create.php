@@ -23,7 +23,6 @@ if($requestMethod == 'POST'){
         //echo $_POST['name'];
         $saveDesign = saveDesign($_POST,$_FILES);
 
-
     }
     else{
 
