@@ -12,8 +12,10 @@ include('function.php');
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
+//var_dump("12356767");exit;
 
 if($requestMethod == 'POST'){
+
 
     $inputData = json_decode(file_get_contents("php://input"),true);
     
@@ -21,13 +23,14 @@ if($requestMethod == 'POST'){
     if(empty($inputData)){
 
         //echo $_POST['name'];
+        //var_dump("12356767");exit;
         $saveDesign = saveDesign($_POST,$_FILES);
 
     }
     else{
 
         //echo $inputData['name'];
-        //var_dump($inputData);exit;
+        
         //$saveDesign = saveDesign($inputData,$_FILES);
 
        // $saveDebtors = saveDebtors($inputData);

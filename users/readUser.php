@@ -1,13 +1,16 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 header('Access-Control-Allow-Origin:*');
 header('Content-Type:application/json');
-header('Access-Control-Allow-Method:GET');
+header('Access-Control-Allow-Methods:GET');
 header('Access-Control-Allow-Header: Content-Type, Access-Control-Allow-Header, Authorization, x-Request-With');
 
 include('functionUser.php');
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
+
 
 if($requestMethod == "GET")
 {
@@ -15,7 +18,6 @@ if($requestMethod == "GET")
 
         $userInfo = getUser($_GET);
         echo $userInfo;
-      
 
     }
     else

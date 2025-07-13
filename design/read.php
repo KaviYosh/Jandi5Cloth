@@ -17,8 +17,12 @@ include('function.php');
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
+
+
 if ($requestMethod == "GET")
 {
+
+    //var_dump("12356767");exit;
     // if (isset($_GET['id']) && isset($_GET['userTyId'])) {        
 
     //     $customerList = getDebtor($_GET);
@@ -65,3 +69,5 @@ else
     echo json_encode($data);
 
 }
+
+?>

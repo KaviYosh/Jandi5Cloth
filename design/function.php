@@ -26,8 +26,6 @@ function saveDesign($debtorInput,$imageInfo){
     $path_dback = '';
     $path_dbProf = '';
 
-   
-    ///NIC image Upload Section 
     if(isset($imageInfo['image'])){
 
         $img_name = $imageInfo['image']['name']; // To get file name
@@ -46,7 +44,6 @@ function saveDesign($debtorInput,$imageInfo){
     $Description =  mysqli_real_escape_string($conn,$debtorInput['Description']);
     $PricePerUnit =  mysqli_real_escape_string($conn,$debtorInput['PricePerUnit']);
     $DateAdded=  mysqli_real_escape_string($conn,$debtorInput['DateAdded']);
-    //$ImagePath=  mysqli_real_escape_string($conn,$debtorInput['path_db']);
     $CreateUser=  mysqli_real_escape_string($conn,$debtorInput['CreateUser']);
     $Active = 1;
 
@@ -74,6 +71,8 @@ function saveDesign($debtorInput,$imageInfo){
 
         $query = "INSERT INTO Designs (DesignName, Description, PricePerUnit, DateAdded, ImagePath, CreateUser, Active) 
                   VALUES ('$DesignName', '$Description', '$PricePerUnit', '$DateAdded', '$path_db', '$CreateUser', '$Active')";
+
+        var_dump($query);exit;
 
         $result = mysqli_query($conn,$query);
 
