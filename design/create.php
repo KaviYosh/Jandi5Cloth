@@ -36,7 +36,7 @@ if($requestMethod == 'POST'){
        // $saveDebtors = saveDebtors($inputData);
         
     }
-    echo $saveDebtors;
+    echo $saveDesign;
 
 }
 else{

@@ -15,7 +15,7 @@ function error422($message){
     exit();
 }
 
-function saveDesign($debtorInput,$imageInfo){
+function saveDesign($designInput,$imageInfo){
 
     /// Created By : Kavinda
     /// Date : 2025-7-5
@@ -40,11 +40,12 @@ function saveDesign($debtorInput,$imageInfo){
         
     }
 
-    $DesignName =  mysqli_real_escape_string($conn,$debtorInput['DesignName']);
-    $Description =  mysqli_real_escape_string($conn,$debtorInput['Description']);
-    $PricePerUnit =  mysqli_real_escape_string($conn,$debtorInput['PricePerUnit']);
-    $DateAdded=  mysqli_real_escape_string($conn,$debtorInput['DateAdded']);
-    $CreateUser=  mysqli_real_escape_string($conn,$debtorInput['CreateUser']);
+    $DesignName =  mysqli_real_escape_string($conn,$designInput['DesignName']);
+    $Description =  mysqli_real_escape_string($conn,$designInput['Description']);
+    $PricePerUnit =  mysqli_real_escape_string($conn,$designInput['PricePerUnit']);
+    $DesignNo = mysqli_real_escape_string($conn,$designInput['DesignNo']);
+    $DateAdded=  mysqli_real_escape_string($conn,$designInput['DateAdded']);
+    $CreateUser=  mysqli_real_escape_string($conn,$designInput['CreateUser']);
     $Active = 1;
 
    
@@ -72,13 +73,13 @@ function saveDesign($debtorInput,$imageInfo){
         $query = "INSERT INTO Designs (DesignName, Description, PricePerUnit, DateAdded, ImagePath, CreateUser, Active) 
                   VALUES ('$DesignName', '$Description', '$PricePerUnit', '$DateAdded', '$path_db', '$CreateUser', '$Active')";
 
-        var_dump($query);exit;
+        
 
         $result = mysqli_query($conn,$query);
 
         if($result)
         {
-            //var_dump($query);exit;
+            //var_dump($result);exit;
             $data = [
 
                 'status'=> 200,
@@ -102,59 +103,49 @@ function saveDesign($debtorInput,$imageInfo){
     $conn->close();
 }
 
-function getDesignById($designParam){
-
+function getDesignById($designParam) {
     global $conn;
 
-    if($debtorParams['DesignNo'] ==  null){
+    if (!isset($designParam) || !is_array($designParam)) {
+        return error422('Invalid input data format.');
+    }
 
+    if (!isset($designParam['DesignID']) || empty($designParam['DesignID'])) {
         return error422('Enter your design Number');
-    }   
+    }
 
-    $query = "SELECT * FROM Designs WHERE Active = 1 AND DesignNo = '$designParam'";
-    $query_run = mysqli_query($conn,$query);
-    
-    if ($query_run){
+    $designID = mysqli_real_escape_string($conn, $designParam['DesignID']);
 
-        if(mysqli_num_rows($query_run) > 0 ){
+    $query = "SELECT * FROM Designs WHERE Active = 1 AND DesignID = '$designID'";
+    $query_run = mysqli_query($conn, $query);
 
-            $res = mysqli_fetch_all($query_run,MYSQLI_ASSOC);
-
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
             $data = [
-
                 'status'=> 200,
-                'message'=> 'Designs List Fetched Sucessfully',
+                'message'=> 'Designs List Fetched Successfully',
                 'data' => $res
             ];
-            header('HTTP/1.0 200 OK ');
+            header('HTTP/1.0 200 OK');
             return json_encode($data);
-
-        }else
-        {
+        } else {
             $data = [
-
                 'status'=> 404,
                 'message'=> 'No Designs Found',
             ];
-            header('HTTP/1.0 404 No Designs Found');
+            header('HTTP/1.0 404 Not Found');
             return json_encode($data);
-
         }
-
-    }
-    else{
-        
+    } else {
         $data = [
-
             'status'=> 500,
-            'message'=> 'Internal server Error',
+            'message'=> 'Internal Server Error',
         ];
-        header('HTTP/1.0 500 Internal server Error');
+        header('HTTP/1.0 500 Internal Server Error');
         return json_encode($data);
-
     }
-
-}   
+}
 
 function getDesingList(){
 
