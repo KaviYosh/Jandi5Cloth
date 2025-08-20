@@ -147,7 +147,7 @@ function getDesignById($designParam) {
     }
 }
 
-function getDesingList(){
+function getDesignList(){
 
     global $conn;
 

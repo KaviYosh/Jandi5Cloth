@@ -25,12 +25,12 @@ function saveShop($shopInput){
     
 
 
-    $shopName=  mysqli_real_escape_string($conn,$designInput['shopName']);
-    $town=  mysqli_real_escape_string($conn,$designInput['town']);
-    $address=  mysqli_real_escape_string($conn,$designInput['address']);
-    $contact_no1= mysqli_real_escape_string($conn,$designInput['contact_no1']);
-    $contact_no2=  mysqli_real_escape_string($conn,$designInput['contact_no2']);
-    $CreateBy=  mysqli_real_escape_string($conn,$designInput['CreateBy']);
+    $shopName=  mysqli_real_escape_string($conn,$shopInput['shopName']);
+    $town=  mysqli_real_escape_string($conn,$shopInput['town']);
+    $address=  mysqli_real_escape_string($conn,$shopInput['address']);
+    $contact_no1= mysqli_real_escape_string($conn,$shopInput['contact_no1']);
+    $contact_no2=  mysqli_real_escape_string($conn,$shopInput['contact_no2']);
+    $CreateBy=  mysqli_real_escape_string($conn,$shopInput['CreateBy']);
     $Active = 1;
 
    
@@ -122,7 +122,7 @@ function getShopById($shopParam) {
         } else {
             $data = [
                 'status'=> 404,
-                'message'=> 'No Designs Found',
+                'message'=> 'No Shops Found',
             ];
             header('HTTP/1.0 404 Not Found');
             return json_encode($data);
@@ -161,7 +161,7 @@ function getShopList() {
         } else {
             $data = [
                 'status'=> 404,
-                'message'=> 'No Designs Found',
+                'message'=> 'No Shops Found',
             ];
             header('HTTP/1.0 404 Not Found');
             return json_encode($data);

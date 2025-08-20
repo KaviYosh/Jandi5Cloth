@@ -8,7 +8,7 @@ header('Access-Control-Allow-Method:POST');
 header('Access-Control-Allow-Header: Content-Type, Access-Control-Allow-Header, Authorization, x-Request-With');
 
 include('shopFunction.php');
-
+require '../middleware/verifyToken.php';
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 

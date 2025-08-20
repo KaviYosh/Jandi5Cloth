@@ -11,13 +11,28 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date in the past
 header("Pragma: no-cache");
 
 include('function.php');
+require '../middleware/verifyToken.php';
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 if ($requestMethod === 'GET') {
-    $designParam = $_GET; // use query parameters
-    echo getDesignById($designParam);
-} else {
+    verifyToken(); // Verify the token before proceeding
+
+    if (isset($_GET['DesignID']) && !empty($_GET['DesignID'])) {
+        
+        // If an ID is provided, fetch the specific design
+        $designParam = $_GET; // use query parameters
+        echo getDesignById($designParam);
+    } 
+    else {
+        // If no ID is provided, fetch the list of designs
+        $designList = getDesignList();
+        echo $designList;
+    }
+
+} 
+else 
+{
     // Invalid method handling
     $data = [
         'status' => 405,
