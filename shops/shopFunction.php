@@ -2,7 +2,6 @@
 
 require '../inc/dbcon.php';
 
-
 function error422($message){
 
     $data = [
@@ -15,7 +14,7 @@ function error422($message){
     exit();
 }
 
-function saveShop($shopInput){
+function saveShop($shopInput,$userId){
 
     /// Created By : Kavinda
     /// Date : 2025-08-19
@@ -30,7 +29,7 @@ function saveShop($shopInput){
     $address=  mysqli_real_escape_string($conn,$shopInput['address']);
     $contact_no1= mysqli_real_escape_string($conn,$shopInput['contact_no1']);
     $contact_no2=  mysqli_real_escape_string($conn,$shopInput['contact_no2']);
-    $CreateBy=  mysqli_real_escape_string($conn,$shopInput['CreateBy']);
+    $CreateBy=  mysqli_real_escape_string($conn,$userId);
     $Active = 1;
 
    
@@ -174,6 +173,156 @@ function getShopList() {
         header('HTTP/1.0 500 Internal Server Error');
         return json_encode($data);
     }
+}
+
+function updateShopInfo($shopParam,$userId){
+
+     /// Created By : Kavinda
+    /// Date : 2025-08-23
+    /// Description : This function is used to update the shop details
+
+    //var_dump($shopParam);exit;
+
+    global $conn;
+    
+
+    if(!isset($shopParam['id'])){
+
+        return error422('Shop id not found in URL');
+    }
+    elseif($shopParam['id'] == null){
+        return error422('Enter your Shop id');
+    }
+    
+
+    $shopName=  mysqli_real_escape_string($conn,$shopParam['shopName']);
+    $id=  mysqli_real_escape_string($conn,$shopParam['id']);
+    $town=  mysqli_real_escape_string($conn,$shopParam['town']);
+    $address=  mysqli_real_escape_string($conn,$shopParam['address']);
+    $contact_no1= mysqli_real_escape_string($conn,$shopParam['contact_no1']);
+    $contact_no2=  mysqli_real_escape_string($conn,$shopParam['contact_no2']);
+   
+    
+    if(empty(trim($shopName)))
+    {
+        return error422('Enter your Shop Name');
+    }
+    elseif(empty(trim($town)))
+    {
+        return error422('Enter your town');
+    }
+    elseif(empty(trim($address)))
+    {
+        return error422('Enter your address');
+    }
+    elseif(empty(trim($contact_no1)))
+    {
+        return error422('Enter your contact No');
+    }
+    else
+    {
+
+        //var_dump($path_dbProf);exit;
+
+        $query = " UPDATE Shops 
+            SET 
+                shopName = '$shopName', 
+                town = '$town', 
+                address = '$address', 
+                contact_no1 = '$contact_no1',
+                contact_no2 = '$contact_no2',
+                ModifiedBy = '$userId'
+                
+            WHERE 
+                id = '$id' ";
+        
+        $result = mysqli_query($conn,$query);
+
+        if($result)
+        {
+            //var_dump($query);exit;
+            $data = [
+
+                'status'=> 200,
+                'message'=> 'Shop updated Successfully',
+            ];
+            header('HTTP/1.0 200 Success');
+            return json_encode($data);
+        }
+        else{
+            $data = [
+
+                'status'=> 500,
+                'message'=> 'Internal server Error',
+            ];
+            header('HTTP/1.0 500 Internal server Error');
+            return json_encode($data);
+        }
+    
+    }
+}
+
+function deleteShopInfo($shopParam,$userId){
+
+    /// Created By : Kavinda
+   /// Date : 2025-08-23
+   /// Description : This function is used to update the shop details
+
+   //var_dump($shopParam);exit;
+
+   global $conn;
+   
+
+   if(!isset($shopParam['id'])){
+
+       return error422('Shop id not found in URL');
+   }
+   elseif($shopParam['id'] == null){
+       return error422('Enter your Shop id');
+   }
+    
+   $id =  mysqli_real_escape_string($conn,$shopParam['id']);
+  
+   if(empty(trim($id)))
+   {
+        return error422('Enter your Shop id');
+   }
+   else
+   {
+       //var_dump($path_dbProf);exit;
+
+       $query = " UPDATE Shops 
+           SET 
+               Active = 0,
+               ModifiedBy = '$userId'
+               
+           WHERE 
+               id = '$id' ";
+       
+       $result = mysqli_query($conn,$query);
+
+       if($result)
+       {
+           //var_dump($query);exit;
+           $data = [
+
+               'status'=> 200,
+               'message'=> 'Shop Delete Successfully',
+           ];
+           header('HTTP/1.0 200 Success');
+           return json_encode($data);
+       }
+       else{
+           $data = [
+
+               'status'=> 500,
+               'message'=> 'Internal server Error',
+           ];
+           header('HTTP/1.0 500 Internal server Error');
+           return json_encode($data);
+       }
+   
+   }
 }
 
 ?>

@@ -15,7 +15,7 @@ function error422($message){
     exit();
 }
 
-function saveDesign($designInput,$imageInfo){
+function saveDesign($designInput,$imageInfo,$userId){
 
     /// Created By : Kavinda
     /// Date : 2025-7-5
@@ -45,7 +45,7 @@ function saveDesign($designInput,$imageInfo){
     $PricePerUnit =  mysqli_real_escape_string($conn,$designInput['PricePerUnit']);
     $DesignNo = mysqli_real_escape_string($conn,$designInput['DesignNo']);
     $DateAdded=  mysqli_real_escape_string($conn,$designInput['DateAdded']);
-    $CreateUser=  mysqli_real_escape_string($conn,$designInput['CreateUser']);
+    $CreateUser=  $userId;
     $Active = 1;
 
    
@@ -101,6 +101,83 @@ function saveDesign($designInput,$imageInfo){
     }
     // Close the database connection
     $conn->close();
+}
+
+function updateDesignInfo($designInput,$imageInfo,$userId) {
+   
+    /// Created By : Kavinda
+    /// Date : 2025-09-05
+    /// Description : This function is used to update design details with images
+   
+    global $conn;
+    $path_db = '';
+
+    if (isset($imageInfo['image'])) {
+        $img_name = $imageInfo['image']['name'];
+        $img_name_tmp = $imageInfo['image']['tmp_name'];
+
+        $ext = pathinfo($img_name, PATHINFO_EXTENSION);
+        $img_new = 'front_' . time();
+        $path = "../desingImg/" . $img_new . "." . $ext;
+        $path_db = "desingImg/" . $img_new . "." . $ext;
+
+        move_uploaded_file($img_name_tmp, $path);
+    }
+
+    $DesignName = mysqli_real_escape_string($conn, $designInput['DesignName']);
+    $Description = mysqli_real_escape_string($conn, $designInput['Description']);
+    $PricePerUnit = mysqli_real_escape_string($conn, $designInput['PricePerUnit']);
+    $DateAdded = mysqli_real_escape_string($conn, $designInput['DateAdded']);
+    $designId = mysqli_real_escape_string($conn, $designInput['DesignID']);
+    $ModifiedBy = $userId;
+
+    //var_dump($designID);exit;
+
+
+    if (empty(trim($DesignName))) {
+        return error422('Enter your Design Name');
+    } elseif (empty(trim($Description))) {
+        return error422('Enter your Description');
+    } elseif (empty(trim($PricePerUnit))) {
+        return error422('Enter Item Price Per Unit');
+    } elseif (empty(trim($DateAdded))) {
+        return error422('Enter Date Added');
+    } else {
+        $query = "UPDATE Designs 
+                  SET DesignName = '$DesignName', 
+                      Description = '$Description', 
+                      PricePerUnit = '$PricePerUnit', 
+                      DateAdded = '$DateAdded', 
+                      ModifiedBy = '$ModifiedBy'";
+        
+        if (!empty($path_db)) {
+            $query .= ", ImagePath = '$path_db'";
+        }
+
+        $query .= " WHERE DesignID = '$designId'";
+
+        //var_dump($query);exit;
+
+        $result = mysqli_query($conn, $query);
+
+        
+
+        if ($result) {
+            $data = [
+                'status' => 200,
+                'message' => 'Design updated Successfully',
+            ];
+            header('HTTP/1.0 200 Success');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 500,
+                'message' => 'Internal server Error',
+            ];
+            header('HTTP/1.0 500 Internal server Error');
+            return json_encode($data);
+        }
+    }
 }
 
 function getDesignById($designParam) {
@@ -194,6 +271,57 @@ function getDesignList(){
 
     }
 
+}
+
+function deleteDesignInfo($debtorParams,$userId){
+
+    global $conn;
+   
+    if($debtorParams['DesignID'] == null){
+        return error422('Enter your Design id');
+    }
+
+    $DesignID =  mysqli_real_escape_string($conn, $debtorParams['DesignID']);
+    
+    
+    if(empty(trim($DesignID)))
+    {
+            return error422('Enter your Design id');
+    }
+
+    //var_dump($path_dbProf);exit;
+
+        $query = " UPDATE Designs 
+        SET 
+            Active = 0,
+            ModifiedBy = '$userId'
+            
+        WHERE 
+            DesignID = '$DesignID' ";
+
+    $result = mysqli_query($conn,$query);
+
+    if($result)
+    {
+        //var_dump($query);exit;
+        $data = [
+
+            'status'=> 200,
+            'message'=> 'Shop Delete Successfully',
+        ];
+        header('HTTP/1.0 200 Success');
+        return json_encode($data);
+    }
+    else{
+        $data = [
+
+            'status'=> 500,
+            'message'=> 'Internal server Error',
+        ];
+        header('HTTP/1.0 500 Internal server Error');
+        return json_encode($data);
+    }
+    
 }
 
 function getDebtor($debtorParams){

@@ -1,19 +1,23 @@
 <?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+
+error_reporting(0);
 
 header('Access-Control-Allow-Origin:*');
 header('Content-Type:application/json');
-header('Access-Control-Allow-Methods:GET');
+header('Access-Control-Allow-Method:POST');
 header('Access-Control-Allow-Header: Content-Type, Access-Control-Allow-Header, Authorization, x-Request-With');
 
 include('functionUser.php');
+require '../middleware/verifyToken.php';
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 
+
 if($requestMethod == "GET")
 {
+    $userData = verifyToken();
+    
     if(isset($_GET['userName'])){
 
         $userInfo = getUser($_GET);

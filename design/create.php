@@ -17,9 +17,9 @@ if($requestMethod == 'POST'){
     $inputData = json_decode(file_get_contents("php://input"),true);
     
     if(empty($inputData)){
-        verifyToken(); // Verify the token before proceeding 
+        $userData = verifyToken(); // Verify the token before proceeding 
         
-        $saveDesign = saveDesign($_POST,$_FILES);
+        $saveDesign = saveDesign($_POST,$_FILES,$userData['uid']);
     }
     else{
 

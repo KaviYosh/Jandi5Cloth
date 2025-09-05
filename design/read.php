@@ -16,7 +16,7 @@ require '../middleware/verifyToken.php';
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 if ($requestMethod === 'GET') {
-    verifyToken(); // Verify the token before proceeding
+    $userData = verifyToken(); // Verify the token before proceeding
 
     if (isset($_GET['DesignID']) && !empty($_GET['DesignID'])) {
         

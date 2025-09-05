@@ -18,14 +18,16 @@ $database = new Database();
 $db = $database->getConnection();
 
 // Get POST data
-$data = json_decode(file_get_contents("php://input"));
+//$data = json_decode(file_get_contents("php://input"));
 
-//var_dump($data);  exit();// Debugging line, remove in production
+// 🔑 Read from form-data
+$username = isset($_POST['UserName']) ? trim($_POST['UserName']) : '';
+$password = isset($_POST['Password']) ? trim($_POST['Password']) : '';
 
 // Validate request
-if (!empty($data->UserName) && !empty($data->Password)) {
-    $username = trim($data->UserName);
-    $password = trim($data->Password);
+if (!empty($username) && !empty($password)) {
+    // $username = trim($data->UserName);
+    // $password = trim($data->Password);
 
     try {
         // Check user exists

@@ -7,35 +7,33 @@ header('Content-Type:application/json');
 header('Access-Control-Allow-Method:POST');
 header('Access-Control-Allow-Header: Content-Type, Access-Control-Allow-Header, Authorization, x-Request-With');
 
-include('shopFunction.php');
+include('functionUser.php');
 require '../middleware/verifyToken.php';
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 if($requestMethod == 'POST'){
 
-
     $inputData = json_decode(file_get_contents("php://input"),true);
+
+    $userData = verifyToken();
+
     
     
     if(empty($inputData)){
-
-        $userData = verifyToken();; // Verify the token before proceeding 
-
-        $saveShop = saveShop($_POST, $userData['uid']);
-
+        
+        $saveUser = saveUser($_POST,$_FILES,$userData['uid']);
     }
     else{
 
-       
-        $userData = verifyToken(); //Verify the token before proceeding 
-
-        $saveShop = saveShop($_POST, $userData['uid']);
+        //echo $inputData['name'];
+        
+        //$saveDesign = saveDesign($inputData,$_FILES);
 
        // $saveDebtors = saveDebtors($inputData);
         
     }
-    echo $saveShop;
+    echo $saveUser;
 
 }
 else{
