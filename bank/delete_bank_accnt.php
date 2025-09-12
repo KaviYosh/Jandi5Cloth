@@ -10,8 +10,10 @@ header("Cache-Control: no-cache, must-revalidate");
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); 
 header("Pragma: no-cache");
 
-include('function.php');
+
+include('functionBank.php');
 require '../middleware/verifyToken.php';
+
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
@@ -20,21 +22,20 @@ if($requestMethod == 'POST')
 {
 
     //var_dump(1234556);exit;
-    $designData = json_decode(file_get_contents("php://input"),true);
+    $bankData = json_decode(file_get_contents("php://input"),true);
     
     $userData = verifyToken();
     //$shopData['UserID'] = $userData['uid']; 
 
-    if(empty($designData))
+    if(empty($bankData))
     {  
-        
-        $designData = updateDesignInfo($_POST,$_FILES,$userData['uid']); 
+        $deleteBank = deleteBank($_POST,$userData['uid']); 
     }
     else
     {
-        $designData = updateDesignInfo($designData); 
+        $deleteBank = deleteBank($bankData,$userData['uid']); 
     }
-    echo $designData;
+    echo $deleteBank;
 }
 else
 {
