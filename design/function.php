@@ -324,6 +324,84 @@ function deleteDesignInfo($debtorParams,$userId){
     
 }
 
+function getDesignAssignShop($designParam){
+
+    /// Created By : Kavinda
+    /// Date : 2025-10-15
+    /// Description : get the design sell shop list
+
+
+    global $conn;
+
+    if (!isset($designParam) || !is_array($designParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($designParam['DesignID']) || empty($designParam['DesignID'])) {
+        return error422('Enter your design Number');
+    }
+
+    $designID = mysqli_real_escape_string($conn, $designParam['DesignID']);
+
+    $query = "SELECT sh.shopName,sh.town,sh.address,sh.contact_no1,sh.contact_no2,IH.InvoiceNo,IH.ItemsTotalAmount FROM InvoiceHeader IH
+            INNER JOIN InvoiceDetails ID
+            ON IH.IHID = ID.InvoiceHedID
+            INNER JOIN Shops sh
+            ON IH.ShopID = sh.id
+            WHERE ID.DesignID = $designID  AND IH.Active = 1
+            GROUP BY IH.ShopID";
+    
+    // SELECT * FROM InvoiceHeader IH
+    //         INNER JOIN InvoiceDetails ID
+    //         ON IH.IHID = ID.InvoiceHedID
+    //         WHERE ID.DesignID = $designID AND IH.Active = 1
+    //         GROUP BY IH.ShopID";
+
+    $query_run = mysqli_query($conn,$query);
+    
+    if ($query_run){
+
+        if(mysqli_num_rows($query_run) > 0 ){
+
+            
+            $res = mysqli_fetch_all($query_run,MYSQLI_ASSOC);
+
+            $data = [
+
+                'status'=> 200,
+                'message'=> 'Design sell shop List Fetched Sucessfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK ');
+            return json_encode($data);
+
+        }else
+        {
+            $data = [
+
+                'status'=> 404,
+                'message'=> 'No shop list Found',
+            ];
+            header('HTTP/1.0 404 No Design Found');
+            return json_encode($data);
+
+        }
+
+    }
+    else{
+        
+        $data = [
+
+            'status'=> 500,
+            'message'=> 'Internal server Error',
+        ];
+        header('HTTP/1.0 500 Internal server Error');
+        return json_encode($data);
+
+    }
+
+}
+
 function getDebtor($debtorParams){
 
     global $conn;

@@ -26,7 +26,7 @@ if ($requestMethod === 'GET') {
         echo getShopById($shopParam); // safer: tie shop to user
         //echo getShopById($shopParam, $userData['uid']);
    
-    } 
+    }
     else 
     {
         echo getShopList(); // return shops for this user only
