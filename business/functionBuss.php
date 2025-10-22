@@ -392,7 +392,7 @@ function getChqDetail($designParam) {
                 ON CDI.ChequeIssuedBnkId  = BD.Bid
                 INNER JOIN OwnerBankInfo OBI
                 ON CDI.DeptBnkId =  OBI.id
-                WHERE PH.Active = 1 AND PH.ShopID = '$ShopID'";
+                WHERE PH.Active = 1 AND PH.ShopID = '$ShopID' AND PH.PMID = 52";
 
         
         $query_run = mysqli_query($conn, $query);
@@ -420,6 +420,155 @@ function getChqDetail($designParam) {
         }
     } catch (Exception $e) {
         var_dump($e);exit;
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error: ' . $e->getMessage(),
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+function getAllChqDetails() {
+
+    /// Created By : Kavinda
+    /// Date : 2025-10-18
+    /// Description : get the shop chq details.
+
+    global $conn;
+    //var_dump(1234);exit;
+    try {
+
+        $query = "SELECT * FROM PayHeader PH
+                INNER JOIN ChequesDeptInfo CDI
+                ON PH.PHID = CDI.PayHeaderID
+                INNER JOIN BankDetails BD
+                ON CDI.ChequeIssuedBnkId  = BD.Bid
+                INNER JOIN OwnerBankInfo OBI
+                ON CDI.DeptBnkId =  OBI.id
+                WHERE PH.Active = 1 AND PH.PMID = 52"; /// 52 mean cheque payment method
+
+        
+        $query_run = mysqli_query($conn, $query);
+
+        if ($query_run) {
+            if (mysqli_num_rows($query_run) > 0) {
+                $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+                $data = [
+                    'status'=> 200,
+                    'message'=> 'Cheques details Fetched Successfully',
+                    'data' => $res
+                ];
+                header('HTTP/1.0 200 OK');
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status'=> 404,
+                    'message'=> 'No Cheques Details Found',
+                ];
+                header('HTTP/1.0 404 Not Found');
+                return json_encode($data);
+            }
+        } else {
+            throw new Exception('Database query failed.');
+        }
+    } catch (Exception $e) {
+        var_dump($e);exit;
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error: ' . $e->getMessage(),
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+function getAllTotalCredit(){
+
+    /// Created By : Kavinda
+    /// Date : 2025-10-22
+    /// Description : get the Total credit details
+
+    global $conn;
+
+    try {
+       
+
+        $queryCredit = "SELECT Sum(TotSellingDeliveCost) As TotalCredit FROM InvoiceHeader WHERE Active = 1";
+        $queryDebit = "SELECT Sum(PayAmount) As TotalDebit FROM PayHeader WHERE Active = 1";
+
+        $queryCreditRun = mysqli_query($conn, $queryCredit);
+        $queryDebitRun = mysqli_query($conn, $queryDebit);
+
+        if ($queryCreditRun && $queryDebitRun) {
+            $creditResult = mysqli_fetch_assoc($queryCreditRun);
+            $debitResult = mysqli_fetch_assoc($queryDebitRun);
+
+            $totalCredit = $creditResult['TotalCredit'] ?? 0;
+            $totalDebit = $debitResult['TotalDebit'] ?? 0;
+
+            $finalBalance = $totalCredit - $totalDebit;
+
+            $data = [
+            'status' => 200,
+            'message' => 'Final balance calculated successfully',
+            'data' => [
+                'TotalCredit' => $totalCredit,
+                'TotalDebit' => $totalDebit,
+                'FinalBalance' => $finalBalance
+            ]
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            throw new Exception('Database query failed.');
+        }
+        
+    } catch (Exception $e) {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error: ' . $e->getMessage(),
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+function getAllTotalDebit() {
+
+    /// Created By : Kavinda
+    /// Date : 2025-10-04
+    /// Description : get the total Debit amount related to a shop
+
+    global $conn;
+
+    try {
+
+        $query = "SELECT Sum(PayAmount) As TotalDebit FROM PayHeader WHERE Active = 1";
+        $query_run = mysqli_query($conn, $query);
+
+        if ($query_run) {
+            if (mysqli_num_rows($query_run) > 0) {
+                $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+                $data = [
+                    'status'=> 200,
+                    'message'=> 'Total Debit amount Fetched Successfully',
+                    'data' => $res
+                ];
+                header('HTTP/1.0 200 OK');
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status'=> 404,
+                    'message'=> 'No Debit Found',
+                ];
+                header('HTTP/1.0 404 Not Found');
+                return json_encode($data);
+            }
+        } else {
+            throw new Exception('Database query failed.');
+        }
+    } catch (Exception $e) {
         $data = [
             'status'=> 500,
             'message'=> 'Internal Server Error: ' . $e->getMessage(),

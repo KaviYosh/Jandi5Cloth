@@ -18,18 +18,9 @@ $requestMethod = $_SERVER["REQUEST_METHOD"];
 if ($requestMethod === 'GET') {
     $userData = verifyToken(); // Verify the token before proceeding
 
-    if (isset($_GET['ShopID']) && !empty($_GET['ShopID'])) {
-        
-        // If an ID is provided, fetch the specific design
-        $designParam = $_GET; // use query parameters
-        //var_dump("0987222333");exit;
-
-        echo getChqDetail($designParam);
-    } 
-    else {
-        
-        echo getAllChqDetails();
-    }
+    // If an ID is provided, fetch the specific design
+    //$designParam = $_GET; // use query parameters
+    echo getAllTotalCredit();
 
 } 
 else 
