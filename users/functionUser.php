@@ -73,32 +73,25 @@ function getUser($userParams){
 
 }
 
-function updateUser($userParams){
+function updatePassword($userParams,$userId){
 
     global $conn;
 
-    if(!isset($userParams['UID'])){
-
-        return error422('User id not found in URL');
-    }
-    elseif($userParams['UID'] == null){
-        return error422('Enter your user id');
-    }
 
     $userPassword = mysqli_real_escape_string ($conn,$userParams['password']);
-    $userID = mysqli_real_escape_string ($conn,$userParams['UID']);
+    $userID = $userId;
 
     if(empty(trim($userPassword)))
     {
         return error422('Enter your phone Number');
     }   
     else{
-        $query = " UPDATE userlogin 
+        $query = " UPDATE UserInfo 
                 SET 
                     Password = '$userPassword'
                     
                 WHERE 
-                    ULID = '$userID' ";
+                    UId = '$userID' ";
 
         $result = mysqli_query($conn,$query);
 
@@ -233,6 +226,140 @@ function saveUser($userInput,$imageInfo,$userId){
     $conn->close();
 }
 
+function getUserInfo($userParams){
+
+    /// Created By : Kavinda
+    /// Date : 2025-11-23
+    /// Description : This function is used to get user details by phone number
+
+
+    global $conn;
+
+    if($userParams['userName'] ==  null){
+
+        return error422('Enter your phone Number');
+    }
+
+    $UID = mysqli_real_escape_string ($conn,$userParams['UID']);     
+
+    $query = "SELECT UId,FirstName,LastName,PhoneNo,UserName,Address,ProfileImagePath FROM UserInfo WHERE UserName = $userName AND Active = 1 ";
+    $result = mysqli_query($conn,$query);
+
+    if($result){
+
+        if(mysqli_num_rows($result) == 1){
+
+            $res = mysqli_fetch_assoc($result);
+
+            $data = [
+
+                'status'=> 200,
+                'message'=> 'User Info Fetch Successful.',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK ');
+            return json_encode($data);
+        }
+        else{
+
+            $data = [
+
+                'status'=> 404,
+                'message'=> 'User info not found',
+            ];
+            header('HTTP/1.0 404 User name is not a registered one');
+            return json_encode($data);
+        }
+
+
+    }else{
+        $data = [
+
+            'status'=> 500,
+            'message'=> 'Internal server Error',
+        ];
+        header('HTTP/1.0 500 Internal server Error');
+        return json_encode($data); 
+    }
+
+}
+
+function updateUserInfo($userInput, $imageInfo,$userId) {
+
+    /// Created By : Kavinda
+    /// Date : 2025-11-23
+    /// Description : Update user info function
+    global $conn;
+    $path_db = '';
+
+    if (isset($imageInfo['image']) && !empty($imageInfo['image']['name'])) {
+
+        $img_name = $imageInfo['image']['name']; // To get file name
+        $img_name_tmp = $imageInfo['image']['tmp_name']; // To get file name temporary location
+
+        $ext = pathinfo($img_name, PATHINFO_EXTENSION);
+        $img_new = 'front_' . time(); // New image name
+        $path = "../profileImg/" . $img_new . "." . $ext; // New path to move
+        $path_db = "profileImg/" . $img_new . "." . $ext;
+
+        move_uploaded_file($img_name_tmp, $path); // To move the image to user_images folder
+    }
+
+    $FirstName = mysqli_real_escape_string($conn, $userInput['FirstName']);
+    $LastName = mysqli_real_escape_string($conn, $userInput['LastName']);
+    $PhoneNo = mysqli_real_escape_string($conn, $userInput['PhoneNo']);
+    $UserName = mysqli_real_escape_string($conn, $userInput['UserName']);
+    $Address = mysqli_real_escape_string($conn, $userInput['Address']);
+   
+
+    if (empty(trim($FirstName))) {
+        return error422('Enter your First Name');
+    } elseif (empty(trim($LastName))) {
+        return error422('Enter your Last Name');
+    } elseif (empty(trim($PhoneNo))) {
+        return error422('Enter your Phone Number');
+    } elseif (empty(trim($UserName))) {
+        return error422('Enter your User Name');
+    } 
+    elseif (empty(trim($Address))) {
+        return error422('Enter your Address');
+    
+    } else {
+        $query = "UPDATE UserInfo SET 
+                    FirstName = '$FirstName', 
+                    LastName = '$LastName', 
+                    PhoneNo = '$PhoneNo', 
+                    UserName = '$UserName',
+                    Address = '$Address'";
+                    
+
+        if (!empty($path_db)) {
+            $query .= ", ProfileImagePath = '$path_db'";
+        }
+
+        $query .= " WHERE UId = '$userId'";
+
+        $result = mysqli_query($conn, $query);
+
+        if ($result) {
+            $data = [
+                'status' => 200,
+                'message' => 'User updated Successfully',
+            ];
+            header('HTTP/1.0 200 Success');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 500,
+                'message' => 'Internal server Error',
+            ];
+            header('HTTP/1.0 500 Internal server Error');
+            return json_encode($data);
+        }
+    }
+    // Close the database connection
+    $conn->close();
+}
 
 
 ?>
