@@ -229,9 +229,13 @@ function getInvoiceDetail($invoiceParam){
 
     $IHID = mysqli_real_escape_string($conn, $invoiceParam['IHID']);
 
-    $query = "SELECT *
-              FROM InvoiceDetails IND 
-              WHERE IND.Active = 1 AND IND.InvoiceHedID = '$IHID' ORDER BY IND.INDID ASC";
+    $query = "SELECT IND.INDID,IND.InvoiceHedID,IND.DesignID,IND.Qty,IND.UnitPrice,IND.SellingPrice,IND.TotalUnitCost,
+            IND.TotalSelingCost,IND.Active,de.DesignName,de.PricePerUnit,de.ImagePath
+            FROM InvoiceDetails IND 
+            INNER JOIN Designs de
+            ON IND.DesignID = de.DesignID
+            WHERE IND.Active = 1 AND IND.InvoiceHedID = '$IHID' ORDER BY IND.INDID ASC";
+
     $query_run = mysqli_query($conn, $query);
     
 

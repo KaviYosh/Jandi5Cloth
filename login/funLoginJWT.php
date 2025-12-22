@@ -60,7 +60,8 @@ if (!empty($username) && !empty($password)) {
                 echo json_encode([
                     "status"  => "success",
                     "message" => "Login successful.",
-                    "token"   => $jwt
+                    "token"   => $jwt,
+                    "UID" => $user['UId']
                 ]);
             } else {
                 http_response_code(401);

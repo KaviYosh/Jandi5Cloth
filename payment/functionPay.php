@@ -699,6 +699,7 @@ function updateBankPayInfo($data,$imageInfo,$userId) {
     $PayDate =  mysqli_real_escape_string($conn, $data['PayDate']);
     $PayAmount = (float) mysqli_real_escape_string($conn, $data['PayAmount']);
     $Bid = mysqli_real_escape_string($conn, $data['Bid']);
+    $PHID = mysqli_real_escape_string($conn, $data['PHID']);
     $CreateUser = $userId;
     $Active     = 1;
 
@@ -735,7 +736,7 @@ function updateBankPayInfo($data,$imageInfo,$userId) {
             ModifiedBy = '$CreateUser',
             ModifiedDate = NOW()
             WHERE 
-            PHID = '$data[PayHeaderID]'";
+            PHID = '$PHID'";
 
         if (!mysqli_query($conn, $queryHeader)) {
             throw new Exception("Failed to update Pay header: " . mysqli_error($conn));
@@ -746,13 +747,17 @@ function updateBankPayInfo($data,$imageInfo,$userId) {
             SET 
             BankID = '$Bid',
             DepositeDate = '$PayDate',
-            PaySlipImagePath = '$path_db',
             DeptAmount = '$PayAmount',
             Remarks = " . ($Remarks !== null ? "'$Remarks'" : "NULL") . ",
             ModifiedBy = '$CreateUser',
-            ModifiedDate = NOW()
-            WHERE 
-            PayHeaderID = '$data[PayHeaderID]'";
+            ModifiedDate = NOW()";
+
+        // Only update PaySlipImagePath if $path_db is not empty
+        if (!empty($path_db)) {
+            $queryBankDeptInfo .= ", PaySlipImagePath = '$path_db'";
+        }
+
+        $queryBankDeptInfo .= " WHERE PayHeaderID = '$PHID'";
 
         if (!mysqli_query($conn, $queryBankDeptInfo)) {
             throw new Exception("Failed to update BankDeptInfo: " . mysqli_error($conn));

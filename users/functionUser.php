@@ -235,14 +235,14 @@ function getUserInfo($userParams){
 
     global $conn;
 
-    if($userParams['userName'] ==  null){
+    if($userParams['UID'] ==  null){
 
-        return error422('Enter your phone Number');
+        return error422('EnterUser Id');
     }
 
     $UID = mysqli_real_escape_string ($conn,$userParams['UID']);     
 
-    $query = "SELECT UId,FirstName,LastName,PhoneNo,UserName,Address,ProfileImagePath FROM UserInfo WHERE UserName = $userName AND Active = 1 ";
+    $query = "SELECT UId,FirstName,LastName,PhoneNo,UserName,Address,ProfileImagePath FROM UserInfo WHERE UId = $UID AND Active = 1 ";
     $result = mysqli_query($conn,$query);
 
     if($result){
