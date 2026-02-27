@@ -308,7 +308,7 @@ function getCommonBankList(){
 
     global $conn;
 
-    $query = "SELECT * FROM BankDetails WHERE Active = 1 ORDER BY id ASC";
+    $query = "SELECT * FROM BankDetails WHERE Active = 1 ORDER BY Bid ASC";
     $query_run = mysqli_query($conn,$query);
     
     if ($query_run){

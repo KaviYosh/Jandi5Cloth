@@ -51,11 +51,30 @@ function saveCashPaymentInfo($data,$userId) {
 
     try {
 
+        // // Get the next ID for PayHeader
+        // $queryNextId = "SELECT MAX(PHID) AS last_id FROM PayHeader";
+        // $resultNextId = mysqli_query($conn, $queryNextId);
+
+        // if ($resultNextId) {
+        //     $row = mysqli_fetch_assoc($resultNextId);
+        //     $nextId = $row['last_id'] + 1;
+        // } else {
+        //     throw new Exception("Failed to retrieve the next PayHeader ID: " . mysqli_error($conn));
+        // }
+
+
+        $nextId = getNextPayHeaderId();
+        if (!$nextId) {
+            throw new Exception("Failed to retrieve the next PayHeader ID.");
+        }
+
+        $payRefNo = createPaymentRefNo($nextId);
+
         // Insert Pay header
         $queryHeader = "INSERT INTO PayHeader 
-            (PMID, ShopID, PayDate, PayAmount,CreateBy, Active) 
+            (PayRefNo,PMID, ShopID, PayDate, PayAmount,CreateBy, Active) 
             VALUES 
-            ('$PMID', '$ShopID', '$PayDate', '$PayAmount','$CreateUser', '$Active')";
+            ('$payRefNo','$PMID', '$ShopID', '$PayDate', '$PayAmount','$CreateUser', '$Active')";
 
         if (!mysqli_query($conn, $queryHeader)) {
             throw new Exception("Failed to insert Pay header: " . mysqli_error($conn));
@@ -165,11 +184,19 @@ function saveBankPaymentInfo($data,$imageInfo,$userId) {
 
     try {
 
+        $nextId = getNextPayHeaderId();
+        if (!$nextId) {
+            throw new Exception("Failed to retrieve the next PayHeader ID.");
+        }
+
+        $payRefNo = createPaymentRefNo($nextId);
+
         // Insert Pay header
         $queryHeader = "INSERT INTO PayHeader 
-            (PMID, ShopID, PayDate, PayAmount,CreateBy, Active) 
+            (PayRefNo,PMID, ShopID, PayDate, PayAmount,CreateBy, Active) 
             VALUES 
-            ('$PMID', '$ShopID', '$PayDate', '$PayAmount','$CreateUser', '$Active')";
+            ('$payRefNo','$PMID', '$ShopID', '$PayDate', '$PayAmount','$CreateUser', '$Active')";
+
 
         if (!mysqli_query($conn, $queryHeader)) {
             throw new Exception("Failed to insert Pay header: " . mysqli_error($conn));
@@ -225,6 +252,7 @@ function saveChequePaymentInfo($data,$imageInfo,$userId) {
     /// Created By : Kavinda
    /// Date : 2025-09-28
    /// Description : Save the Cheque payment for an invoice
+   // in here active status keep as 2, becasue of the cheque is in a pending status
 
     global $conn;
 
@@ -256,7 +284,7 @@ function saveChequePaymentInfo($data,$imageInfo,$userId) {
     $ChequeDate = mysqli_real_escape_string($conn, $data['ChequeDate']);
     $OwnBnkId = mysqli_real_escape_string($conn, $data['OwnBnkId']);
     $CreateUser = $userId;
-    $Active     = 1;
+    $Active     = 2;
 
     // Remarks (optional, default null)
     $Remarks = isset($data['Remarks']) && trim($data['Remarks']) !== '' ? mysqli_real_escape_string($conn, $data['Remarks']) : null;
@@ -292,11 +320,20 @@ function saveChequePaymentInfo($data,$imageInfo,$userId) {
 
     try {
 
+
+        $nextId = getNextPayHeaderId();
+        if (!$nextId) {
+            throw new Exception("Failed to retrieve the next PayHeader ID.");
+        }
+
+        $payRefNo = createPaymentRefNo($nextId);
+
         // Insert Pay header
         $queryHeader = "INSERT INTO PayHeader 
-            (PMID, ShopID, PayDate, PayAmount,CreateBy, Active) 
+            (PayRefNo,PMID, ShopID, PayDate, PayAmount,CreateBy, Active) 
             VALUES 
-            ('$PMID', '$ShopID', '$PayDate', '$PayAmount','$CreateUser', '$Active')";
+            ('$payRefNo','$PMID', '$ShopID', '$PayDate', '$PayAmount','$CreateUser', '$Active')";
+
 
         if (!mysqli_query($conn, $queryHeader)) {
             throw new Exception("Failed to insert Pay header: " . mysqli_error($conn));
@@ -349,6 +386,40 @@ function saveChequePaymentInfo($data,$imageInfo,$userId) {
 
 
 
+}
+
+function getNextPayHeaderId() {
+    /// Created By : Kavinda
+    /// Date : 2025-11-06
+    /// Description : Get the next PayHeader ID
+
+    global $conn;
+
+    $queryNextId = "SELECT MAX(PHID) AS last_id FROM PayHeader";
+    $resultNextId = mysqli_query($conn, $queryNextId);
+
+    if ($resultNextId) {
+        $row = mysqli_fetch_assoc($resultNextId);
+        $nextId = isset($row['last_id']) ? $row['last_id'] + 1 : 1; // If no rows, start with 1
+        return $nextId;
+    } else {
+        throw new Exception("Failed to retrieve the next PayHeader ID: " . mysqli_error($conn));
+    }
+}
+
+function createPaymentRefNo($nextId) {
+    global $conn;
+
+    // Get current year and month
+    $yearMonth = date("Y-m");
+
+    // Count how many invoices exist for this year-month
+    
+
+    // Format invoice number: INV-2025-09-0001
+    $invoiceNo = "Pay-" . $yearMonth . "-" . str_pad($nextId, 5, "0", STR_PAD_LEFT);
+
+    return $invoiceNo;
 }
 
 function deleteBankInfo($data, $userId) {
@@ -934,6 +1005,140 @@ function updateCheqPayInfo($data,$imageInfo,$userId) {
 
 
 }
+
+function updateChqPayStatus($data, $userId) {
+
+    /// Created By : Kavinda
+    /// Date : 2025-12-023
+    /// Description : Update the Cheque payment status as a completed or return status
+    /// complete == 1 and return as == 3
+
+    global $conn;
+
+    if (!isset($data['PayHeaderID'])) {
+        return error422('PayHeaderID not found in request');
+    } elseif ($data['PayHeaderID'] == null) {
+        return error422('PayHeaderID is required');
+    }
+
+    $id = mysqli_real_escape_string($conn, $data['PayHeaderID']);
+    $ChqStatus = mysqli_real_escape_string($conn, $data['ChqStatus']);
+
+    if (empty(trim($id))) {
+        return error422('PayHeaderID cannot be empty');
+    }
+
+    // Start transaction
+    mysqli_begin_transaction($conn);
+
+    try {
+        // Update PayHeader table
+        $queryPayHeader = "UPDATE PayHeader 
+            SET 
+                Active = '$ChqStatus',
+                ModifiedBy = '$userId',
+                ModifiedDate = NOW()
+            WHERE 
+                PHID = '$id'";
+
+        if (!mysqli_query($conn, $queryPayHeader)) {
+            throw new Exception("Failed to update PayHeader: " . mysqli_error($conn));
+        }
+
+        // Update BankDeptInfo table
+        $queryBankDeptInfo = "UPDATE ChequesDeptInfo 
+            SET 
+                Active = '$ChqStatus',
+                ModifiedBy = '$userId',
+                ModifiedDate = NOW()
+            WHERE 
+                PayHeaderID = '$id'";
+
+        if (!mysqli_query($conn, $queryBankDeptInfo)) {
+            throw new Exception("Failed to update Cheque pay Status: " . mysqli_error($conn));
+        }
+
+        // Commit transaction
+        mysqli_commit($conn);
+
+        $response = [
+            'status' => 200,
+            'message' => 'Cheques payment Status updatedc successfully',
+        ];
+        header('HTTP/1.0 200 Success');
+        return json_encode($response);
+
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        mysqli_rollback($conn);
+
+        $response = [
+            'status' => 500,
+            'message' => 'Failed to update Cheques Pay Info',
+            'error' => $e->getMessage()
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($response);
+    }
+}
+
+function getPendingChqInfo(){
+
+    /// Created By : Kavinda
+    /// Date : 2025-12-24
+    /// Description : get the pending chq details. consider the current date> chq date
+   
+    global $conn;
+
+    $query = "SELECT pyh.PHID, pyh.PMID, pyh.ShopID, pyh.PayDate,pyh.Active AS payHeaderStatus,
+    pm.PaymentMethod, sp.shopName, sp.contact_no1,
+    obi.name AS OwnerBankName,
+    obi.branch AS OwneBnkBranch,
+    obi.account_no AS OwnerAccountNo,
+    cdi.CheqDId, cdi.ChqNo, cdi.ChequeAmount,
+    cdi.ChequeDate, cdi.ChequeIssuedBnkId,
+    cdi.DeptBnkId, cdi.ChequeDeptDate,
+    cdi.DeptImagePath, cdi.Remarks,
+    cdi.Active AS ChqDtlStatus,
+    bd.BankName AS ChequesIssedBankName
+     FROM PayHeader pyh
+     INNER JOIN PaymentMethod pm ON pyh.PMID = pm.PMID
+     INNER JOIN ChequesDeptInfo cdi ON pyh.PHID = cdi.PayHeaderID
+     INNER JOIN Shops sp ON sp.id = pyh.ShopID
+     INNER JOIN OwnerBankInfo obi ON cdi.DeptBnkId = obi.id
+     INNER JOIN BankDetails bd ON cdi.ChequeIssuedBnkId = bd.Bid
+     WHERE cdi.ChequeDate <= CURDATE() AND pyh.Active = 2";
+
+     $query_run = mysqli_query($conn, $query);
+
+     //var_dump($query);exit;  
+     
+     if ($query_run) 
+     {
+         $cashPayData = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+
+         //var_dump($cashPayData);exit;  
+
+         $data = [
+             'status'=> 200,
+             'message'=> 'Pending Cheque Info fetched successfully',
+             'data'=> $cashPayData,
+         ];
+         header('HTTP/1.0 200 Success');
+         return json_encode($data);
+     } 
+     else {
+         $data = [
+             'status'=> 500,
+             'message'=> 'Internal Server Error',
+         ];
+         header('HTTP/1.0 500 Internal Server Error');
+         return json_encode($data);
+     }
+
+
+}
+
 
 
 ?> 

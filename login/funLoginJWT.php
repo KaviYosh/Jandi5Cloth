@@ -31,7 +31,7 @@ if (!empty($username) && !empty($password)) {
 
     try {
         // Check user exists
-        $query = "SELECT UId, UserName, Password FROM UserInfo WHERE UserName = :username LIMIT 1";
+        $query = "SELECT UId, UserName, Password,RoleId FROM UserInfo WHERE UserName = :username LIMIT 1";
         $stmt = $db->prepare($query);
         $stmt->bindParam(":username", $username);
         $stmt->execute();
@@ -61,7 +61,9 @@ if (!empty($username) && !empty($password)) {
                     "status"  => "success",
                     "message" => "Login successful.",
                     "token"   => $jwt,
-                    "UID" => $user['UId']
+                    "UID" => $user['UId'],
+                    "RoleId" => $user['RoleId']
+
                 ]);
             } else {
                 http_response_code(401);

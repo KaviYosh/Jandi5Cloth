@@ -152,19 +152,23 @@ function getShopTrnsHistory($designParam) {
                 IH.InvoiceNo,
                 IH.InvoiceDate AS PayDate,
                 NULL AS DebitAmount,
-                IH.TotSellingDeliveCost AS CreditAmount
+                IH.TotSellingDeliveCost AS CreditAmount,
+                NULL AS PaymentMethod
             FROM InvoiceHeader IH
             WHERE IH.Active = 1 AND IH.ShopID = '$ShopID'
 
             UNION ALL
 
             SELECT 
-                PH.PHID AS TransactionNo,
+                PH.PayRefNo AS TransactionNo,
                 NULL AS InvoiceNo,
                 PH.PayDate,
                 PH.PayAmount AS DebitAmount,
-                NULL AS CreditAmount
+                NULL AS CreditAmount,
+                PM.PaymentMethod
             FROM PayHeader PH
+            INNER JOIN PaymentMethod PM
+            ON PH.PMID = PM.PMID
             WHERE PH.Active = 1 AND PH.ShopID = '$ShopID'
         ";
 
@@ -267,7 +271,7 @@ function getAllInvoiceInfo() {
 
     try {
         
-        $query = "SELECT IH.IHID,IH.InvoiceNo,IH.InvoiceDate,IH.ItemsTotalAmount,IH.DeliveryCost,IH.TotSellingDeliveCost,sh.shopName
+        $query = "SELECT IH.IHID,IH.ShopID,IH.InvoiceNo,IH.InvoiceDate,IH.ItemsTotalAmount,IH.DeliveryCost,IH.TotSellingDeliveCost,sh.shopName
                     FROM `InvoiceHeader` IH 
                     INNER JOIN Shops sh
                     ON IH.ShopID = sh.id WHERE IH.Active = 1 ORDER BY IH.IHID ASC";
@@ -385,16 +389,35 @@ function getChqDetail($designParam) {
 
         $ShopID = mysqli_real_escape_string($conn, $designParam['ShopID']);
 
-        $query = "SELECT * FROM PayHeader PH
-                INNER JOIN ChequesDeptInfo CDI
-                ON PH.PHID = CDI.PayHeaderID
-                INNER JOIN BankDetails BD
-                ON CDI.ChequeIssuedBnkId  = BD.Bid
-                INNER JOIN OwnerBankInfo OBI
-                ON CDI.DeptBnkId =  OBI.id
-                WHERE PH.Active = 1 AND PH.ShopID = '$ShopID' AND PH.PMID = 52";
+        // $query = "SELECT * FROM PayHeader PH
+        //         INNER JOIN ChequesDeptInfo CDI
+        //         ON PH.PHID = CDI.PayHeaderID
+        //         INNER JOIN BankDetails BD
+        //         ON CDI.ChequeIssuedBnkId  = BD.Bid
+        //         INNER JOIN OwnerBankInfo OBI
+        //         ON CDI.DeptBnkId =  OBI.id
+        //         WHERE (PH.Active = 1 || PH.Active = 2) AND PH.ShopID = '$ShopID' AND PH.PMID = 52";
 
-        
+
+        $query = "SELECT pyh.PHID,pyh.PayAmount,pyh.PMID, pyh.ShopID, pyh.PayDate,pyh.Active AS payHeaderStatus,
+        pm.PaymentMethod, sp.shopName, sp.contact_no1,
+        obi.name AS OwnerBankName,
+        obi.branch AS OwneBnkBranch,
+        obi.account_no AS OwnerAccountNo,
+        cdi.CheqDId, cdi.ChqNo, cdi.ChequeAmount,
+        cdi.ChequeDate, cdi.ChequeIssuedBnkId,
+        cdi.DeptBnkId, cdi.ChequeDeptDate,
+        cdi.DeptImagePath, cdi.Remarks,
+        cdi.Active AS ChqDtlStatus,
+        bd.BankName AS ChequesIssedBankName
+        FROM PayHeader pyh
+        INNER JOIN PaymentMethod pm ON pyh.PMID = pm.PMID
+        INNER JOIN ChequesDeptInfo cdi ON pyh.PHID = cdi.PayHeaderID
+        INNER JOIN Shops sp ON sp.id = pyh.ShopID
+        INNER JOIN OwnerBankInfo obi ON cdi.DeptBnkId = obi.id
+        INNER JOIN BankDetails bd ON cdi.ChequeIssuedBnkId = bd.Bid
+        WHERE pyh.Active != 0 AND pyh.ShopID = '$ShopID' AND pyh.PMID = 52";
+
         $query_run = mysqli_query($conn, $query);
 
         if ($query_run) {
@@ -439,16 +462,36 @@ function getAllChqDetails() {
     //var_dump(1234);exit;
     try {
 
-        $query = "SELECT * FROM PayHeader PH
-                INNER JOIN ChequesDeptInfo CDI
-                ON PH.PHID = CDI.PayHeaderID
-                INNER JOIN BankDetails BD
-                ON CDI.ChequeIssuedBnkId  = BD.Bid
-                INNER JOIN OwnerBankInfo OBI
-                ON CDI.DeptBnkId =  OBI.id
-                WHERE PH.Active = 1 AND PH.PMID = 52"; /// 52 mean cheque payment method
+        // $query = "SELECT * FROM PayHeader PH
+        //         INNER JOIN ChequesDeptInfo CDI
+        //         ON PH.PHID = CDI.PayHeaderID
+        //         INNER JOIN BankDetails BD
+        //         ON CDI.ChequeIssuedBnkId  = BD.Bid
+        //         INNER JOIN OwnerBankInfo OBI
+        //         ON CDI.DeptBnkId =  OBI.id
+        //         WHERE (PH.Active = 1 || PH.Active = 2) AND PH.PMID = 52"; /// 52 mean cheque payment method
 
-        
+        $query = "SELECT pyh.PHID,pyh.PayAmount,pyh.PMID, pyh.ShopID, pyh.PayDate,pyh.Active AS payHeaderStatus,
+        pm.PaymentMethod, sp.shopName, sp.contact_no1,
+        obi.name AS OwnerBankName,
+        obi.branch AS OwneBnkBranch,
+        obi.account_no AS OwnerAccountNo,
+        cdi.CheqDId, cdi.ChqNo, cdi.ChequeAmount,
+        cdi.ChequeDate, cdi.ChequeIssuedBnkId,
+        cdi.DeptBnkId, cdi.ChequeDeptDate,
+        cdi.DeptImagePath, cdi.Remarks,
+        cdi.Active AS ChqDtlStatus,
+        bd.BankName AS ChequesIssedBankName
+        FROM PayHeader pyh
+        INNER JOIN PaymentMethod pm ON pyh.PMID = pm.PMID
+        INNER JOIN ChequesDeptInfo cdi ON pyh.PHID = cdi.PayHeaderID
+        INNER JOIN Shops sp ON sp.id = pyh.ShopID
+        INNER JOIN OwnerBankInfo obi ON cdi.DeptBnkId = obi.id
+        INNER JOIN BankDetails bd ON cdi.ChequeIssuedBnkId = bd.Bid
+        WHERE pyh.Active != 0 AND pyh.PMID = 52";
+
+
+
         $query_run = mysqli_query($conn, $query);
 
         if ($query_run) {

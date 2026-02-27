@@ -79,6 +79,8 @@ function updatePassword($userParams,$userId){
 
 
     $userPassword = mysqli_real_escape_string ($conn,$userParams['password']);
+    $currentPassword = mysqli_real_escape_string ($conn,$userParams['CurrentPassword']);
+    
     $userID = $userId;
 
     if(empty(trim($userPassword)))
@@ -86,14 +88,27 @@ function updatePassword($userParams,$userId){
         return error422('Enter your phone Number');
     }   
     else{
-        $query = " UPDATE UserInfo 
-                SET 
-                    Password = '$userPassword'
-                    
-                WHERE 
-                    UId = '$userID' ";
 
-        $result = mysqli_query($conn,$query);
+
+        $query = "SELECT Password FROM UserInfo WHERE UId = '$userID'";
+        $result = mysqli_query($conn, $query);
+
+        if ($result && mysqli_num_rows($result) == 1) {
+            $row = mysqli_fetch_assoc($result);
+
+            if ($currentPassword == $row['Password']) {
+
+                //$hashedPassword = password_hash($userPassword, PASSWORD_BCRYPT);
+
+                $updateQuery = "UPDATE UserInfo SET Password = '$userPassword', ModifiedBy = '$userID' WHERE UId = '$userID'";
+
+                $result = mysqli_query($conn, $updateQuery);
+            } else {
+                return error422('Current password is incorrect');
+            }
+        } else {
+            return error422('User not found or invalid user ID');
+        }
 
         if($result)
         {

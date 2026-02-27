@@ -271,4 +271,110 @@ function getInvoiceDetail($invoiceParam){
     }
 }
 
+function updateInvoiceInfo($data, $userId) {
+    global $conn;
+
+    // Extract and sanitize header data
+    $InvoiceHedID = mysqli_real_escape_string($conn, $data['InvoiceHedID']);
+    $ShopID = mysqli_real_escape_string($conn, $data['ShopID']);
+    $InvoiceDate = mysqli_real_escape_string($conn, $data['InvoiceDate']);
+    $ItemsTotalAmount = (float) mysqli_real_escape_string($conn, $data['ItemsTotalAmount']);
+
+    // Delivery cost (optional, default 0.00)
+    $DeliveryCost = isset($data['DeliveryCost']) && trim($data['DeliveryCost']) !== '' 
+        ? (float) mysqli_real_escape_string($conn, $data['DeliveryCost']) 
+        : 0.00;
+
+    // Final total
+    $TotSellingDeliveCost = $ItemsTotalAmount + $DeliveryCost;
+
+    $UpdateUser = $userId;
+
+    // Validation
+    if (empty(trim($InvoiceHedID))) {
+        return error422('Invoice Header ID is required');
+    } elseif (empty(trim($ShopID))) {
+        return error422('Shop ID is required');
+    } elseif (empty(trim($InvoiceDate))) {
+        return error422('Invoice Date is required');
+    } elseif ($ItemsTotalAmount <= 0) {
+        return error422('Items Total Amount is required');
+    }
+
+    // Start transaction
+    mysqli_begin_transaction($conn);
+
+    try {
+        // Update invoice header
+        $queryHeader = "UPDATE InvoiceHeader 
+            SET ShopID = '$ShopID', 
+                InvoiceDate = '$InvoiceDate', 
+                ItemsTotalAmount = '$ItemsTotalAmount', 
+                DeliveryCost = '$DeliveryCost', 
+                TotSellingDeliveCost = '$TotSellingDeliveCost', 
+                ModifiedBy = '$UpdateUser', 
+                ModifiedDate = NOW() 
+            WHERE IHID = '$InvoiceHedID'";
+
+        if (!mysqli_query($conn, $queryHeader)) {
+            throw new Exception("Failed to update invoice header: " . mysqli_error($conn));
+        }
+
+        // Delete existing invoice details
+        $queryDeleteDetails = "DELETE FROM InvoiceDetails WHERE InvoiceHedID = '$InvoiceHedID'";
+        if (!mysqli_query($conn, $queryDeleteDetails)) {
+            throw new Exception("Failed to delete existing invoice details: " . mysqli_error($conn));
+        }
+
+        // Insert updated invoice details (expects $data['Details'] as array of line items)
+        if (!empty($data['Details']) && is_array($data['Details'])) {
+            foreach ($data['Details'] as $item) {
+                $DesignID = mysqli_real_escape_string($conn, $item['DesignID']);
+                $Qty = (int) $item['Qty'];
+                $UnitPrice = (float) $item['UnitPrice'];
+                $SellingPrice = (float) $item['SellingPrice'];
+
+                $TotalUnitCost = $Qty * $UnitPrice;
+                $TotalSellingCost = $Qty * $SellingPrice;
+
+                $queryDetail = "INSERT INTO InvoiceDetails 
+                    (InvoiceHedID, DesignID, Qty, UnitPrice, SellingPrice, TotalUnitCost, TotalSelingCost, Active, CreateBy) 
+                    VALUES 
+                    ('$InvoiceHedID', '$DesignID', '$Qty', '$UnitPrice', '$SellingPrice', '$TotalUnitCost', '$TotalSellingCost', 1, '$UpdateUser')";
+
+                if (!mysqli_query($conn, $queryDetail)) {
+                    throw new Exception("Failed to insert updated invoice detail: " . mysqli_error($conn));
+                }
+            }
+        } else {
+            throw new Exception("No invoice details provided");
+        }
+
+        // Commit transaction
+        mysqli_commit($conn);
+
+        $response = [
+            'status' => 200,
+            'message' => 'Invoice updated successfully',
+            'invoice_id' => $InvoiceHedID
+        ];
+        header('HTTP/1.0 200 OK');
+
+    } catch (Exception $e) {
+        // Rollback on error
+        mysqli_rollback($conn);
+        $response = [
+            'status' => 500,
+            'message' => 'Failed to update invoice',
+            'error' => $e->getMessage()
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+    }
+
+    // Close connection
+    mysqli_close($conn);
+
+    return json_encode($response);
+}
+
 ?>

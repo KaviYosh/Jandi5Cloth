@@ -45,6 +45,7 @@ function saveDesign($designInput,$imageInfo,$userId){
     $PricePerUnit =  mysqli_real_escape_string($conn,$designInput['PricePerUnit']);
     $DesignNo = mysqli_real_escape_string($conn,$designInput['DesignNo']);
     $DateAdded=  mysqli_real_escape_string($conn,$designInput['DateAdded']);
+    $stock_qty=  mysqli_real_escape_string($conn,$designInput['stock_qty']);
     $CreateUser=  $userId;
     $Active = 1;
 
@@ -70,8 +71,8 @@ function saveDesign($designInput,$imageInfo,$userId){
     {
         //var_dump($path_db);exit;
 
-        $query = "INSERT INTO Designs (DesignName, Description, PricePerUnit, DateAdded, ImagePath, CreateUser, Active) 
-                  VALUES ('$DesignName', '$Description', '$PricePerUnit', '$DateAdded', '$path_db', '$CreateUser', '$Active')";
+        $query = "INSERT INTO Designs (DesignName, Description,stock_qty, PricePerUnit, DateAdded, ImagePath, CreateUser, Active) 
+                  VALUES ('$DesignName', '$Description','$stock_qty' ,'$PricePerUnit', '$DateAdded', '$path_db', '$CreateUser', '$Active')";
 
         
 
@@ -129,6 +130,7 @@ function updateDesignInfo($designInput,$imageInfo,$userId) {
     $PricePerUnit = mysqli_real_escape_string($conn, $designInput['PricePerUnit']);
     $DateAdded = mysqli_real_escape_string($conn, $designInput['DateAdded']);
     $designId = mysqli_real_escape_string($conn, $designInput['DesignID']);
+    $stock_qty=  mysqli_real_escape_string($conn,$designInput['stock_qty']);
     $ModifiedBy = $userId;
 
     //var_dump($designID);exit;
@@ -148,6 +150,7 @@ function updateDesignInfo($designInput,$imageInfo,$userId) {
                       Description = '$Description', 
                       PricePerUnit = '$PricePerUnit', 
                       DateAdded = '$DateAdded', 
+                      stock_qty = '$stock_qty',
                       ModifiedBy = '$ModifiedBy'";
         
         if (!empty($path_db)) {
@@ -402,6 +405,56 @@ function getDesignAssignShop($designParam){
 
 }
 
+function getDesignSellCount($designParam) {
+    global $conn;
+
+    if (!isset($designParam) || !is_array($designParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($designParam['DesignID']) || empty($designParam['DesignID'])) {
+        return error422('Enter your design Number');
+    }
+
+    $designID = mysqli_real_escape_string($conn, $designParam['DesignID']);
+
+
+    $query = "SELECT Sum(Qty) AS SellDesignCount FROM `InvoiceDetails` WHERE DesignID = '$designID' AND Active =1";
+
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Designs Sell Count Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Designs Sell Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+
+///////////////////////////////// Salli Poli App function
+
+
 function getDebtor($debtorParams){
 
     global $conn;
@@ -476,7 +529,7 @@ function getDebtor($debtorParams){
     }
     // Close the database connection
     $conn->close();
-}
+}   
 
 function getDebtorForSearch($debtorParams){
 
