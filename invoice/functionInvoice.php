@@ -71,8 +71,6 @@ function saveInvoiceInfo($data,$userId) {
         // Get inserted header ID
         $invoiceHedID = mysqli_insert_id($conn);
 
-       
-
         // Insert invoice details (expects $data['Details'] as array of line items)
         if (!empty($data['Details']) && is_array($data['Details'])) {
 
