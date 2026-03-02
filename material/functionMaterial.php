@@ -228,4 +228,61 @@ function createInvoiceNo() {
     return $invoiceNo;
 }
 
+function deleteMaterialInfo($bankParam,$userId) {
+
+    /// Created By : Kavinda
+    /// Date : 2026-03-02
+    /// Description : This function is used to delete the Material details by setting the 
+    //                Active field to 0 (soft delete)
+
+    global $conn;
+
+    //var_dump($bankParam['MID']);exit;
+
+    if (!isset($bankParam) || !is_array($bankParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($bankParam['MID']) || empty($bankParam['MID'])) {
+        return error422('Enter the Material ID');
+    }
+
+    $id = mysqli_real_escape_string($conn, $bankParam['MID']);
+    $ModifiedBy = $userId;
+
+    // Soft delete MaterialInfo record
+    $query = "UPDATE MaterialInfo SET Active = 0, ModifiedBy = '$ModifiedBy' WHERE MID = '$id'";
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_affected_rows($conn) > 0) {
+            // Soft delete related MaterialBillInfo records
+            $bill_query = "UPDATE MaterialBillInfo SET Active = 0, ModifiedBy = '$ModifiedBy' WHERE MateID = '$id'";
+            mysqli_query($conn, $bill_query);
+
+            $data = [
+                'status' => 200,
+                'message' => 'Material Details Deleted Successfully',
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status' => 404,
+                'message' => 'No Material Found with the given ID',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+
 ?>
