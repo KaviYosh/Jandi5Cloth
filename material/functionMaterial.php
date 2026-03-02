@@ -14,7 +14,6 @@ function error422($message){
     exit();
 }
 
-
 function saveMaterialInfo($MaterialInput, $imageInfo, $userId){
   /// Created By : Kavinda
   /// Date : 2025-02-28
@@ -284,5 +283,105 @@ function deleteMaterialInfo($bankParam,$userId) {
     }
 }
 
+function getAllMaterialAmount(){
+    /// Created By : Kavinda
+    /// Date : 2026-03-02
+    /// Description : This function is used to get the total amount of all the material records
+
+    global $conn;
+
+    $query = "SELECT SUM(TotalPayment) AS TotalMaterialAmount FROM MaterialInfo WHERE Active = 1";
+    $result = mysqli_query($conn, $query);
+
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        return json_encode([
+            'status' => 200,
+            'message' => 'Total Material Amount retrieved successfully',
+            'data' => [
+                'TotalMaterialAmount' => $row['TotalMaterialAmount']
+            ]
+        ]);
+    } else {
+        return json_encode([
+            'status' => 500,
+            'message' => 'Internal Server Error',
+            'data' => []
+        ]);
+    }
+}
+
+function updateMaterialInfo($MaterialInput, $imageInfo, $userId){
+    /// Created By : Kavinda
+    /// Date : 2026-03-02
+    /// Description : This function is used to update the material details along with the associated images (if any)
+
+    global $conn;
+
+    // Validate the input
+    if (!isset($MaterialInput) || !is_array($MaterialInput)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($MaterialInput['MID']) || empty($MaterialInput['MID'])) {
+        return error422('Enter the Material ID');
+    }
+
+    $materialID = mysqli_real_escape_string($conn, $MaterialInput['MID']);
+    $date = mysqli_real_escape_string($conn, $MaterialInput['date']);
+    $totalPayment = mysqli_real_escape_string($conn, $MaterialInput['totalPayment']);
+    $remarks = mysqli_real_escape_string($conn, $MaterialInput['remarks']);
+    $ModifiedBy = mysqli_real_escape_string($conn, $userId);
+
+    // Update MaterialInfo record
+    $query = "UPDATE MaterialInfo SET 
+             ProcessedDate = '$date', TotalPayment = '$totalPayment', Remarks = '$remarks', ModifiedBy = '$ModifiedBy' WHERE MID = '$materialID'";
+    
+    if (mysqli_query($conn, $query)) {
+        
+        // Handle image updates for MaterialBillInfo table
+        if (isset($imageInfo['image']) && !empty($imageInfo['image']['name'])) {
+            // Delete existing images for the given MID
+            $deleteQuery = "DELETE FROM MaterialBillInfo WHERE MateID = '$materialID'";
+            mysqli_query($conn, $deleteQuery);
+
+            // Insert new images
+            $files = $imageInfo['image'];
+            $file_count = is_array($files['name']) ? count($files['name']) : 1;
+
+            for ($i = 0; $i < $file_count; $i++) {
+                $img_name = is_array($files['name']) ? $files['name'][$i] : $files['name'];
+                $img_name_tmp = is_array($files['tmp_name']) ? $files['tmp_name'][$i] : $files['tmp_name'];
+
+                if (!empty($img_name)) {
+                    $ext = pathinfo($img_name, PATHINFO_EXTENSION);
+                    $img_new = 'bill_' . time() . '_' . $i;
+                    $path = "../billImage/" . $img_new . "." . $ext;
+                    $path_db = "billImage/" . $img_new . "." . $ext;
+
+                    if (move_uploaded_file($img_name_tmp, $path)) {
+                        $img_query = "INSERT INTO MaterialBillInfo (MateID, ImagePath, Active, ModifiedBy) 
+                                      VALUES ('$materialID', '$path_db', 1, '$ModifiedBy')";
+                        mysqli_query($conn, $img_query);
+                    }
+                }
+            }
+        }
+
+        $data = [
+            'status' => 200,
+            'message' => 'Material Details and Images Updated Successfully',
+        ];
+        header('HTTP/1.0 200 OK');
+        return json_encode($data);
+    } else {
+        $data = [
+            'status' => 500,
+            'message' => 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
 
 ?>
