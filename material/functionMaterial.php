@@ -14,78 +14,12 @@ function error422($message){
     exit();
 }
 
-// function saveMaterialInfo($MaterialInput,$userId){
 
-//     /// Created By : Kavinda
-//     /// Date : 2025-08-19
-//     /// Description : This function is used to save shop details 
-
-//     global $conn;
-    
-//     // Generate Invoice Number
-//     $invoiceNo = createInvoiceNo();
-
-//     $ProcessedDate =  mysqli_real_escape_string($conn,$MaterialInput['date']);
-//     $TotalPayment =  mysqli_real_escape_string($conn,$MaterialInput['totalPayment']);
-//     $TransNo = $invoiceNo;
-//     $Remarks =  mysqli_real_escape_string($conn,$MaterialInput['remarks']);
-//     $CreateBy =  mysqli_real_escape_string($conn,$userId);
-//     $Active = 1;
-
-   
-
-//     if(empty(trim($date)))
-//     {
-//         return error422('Select date please');
-//     }
-//     elseif(empty(trim($totalPayment)))
-//     {
-//         return error422('Enter total Payment amount');
-//     }
-     
-//     else
-//     {
-//         //var_dump($path_db);exit;
-
-//         $query = "INSERT INTO MaterialInfo (ProcessedDate, TotalPayment,TransNo, Remarks,CreateBy, Active) 
-//                   VALUES ('$ProcessedDate', '$TotalPayment', '$address', '$contact_no1', '$contact_no2', '$CreateBy', '$Active')";
-
-        
-
-//         $result = mysqli_query($conn,$query);
-
-//         if($result)
-//         {
-//             //var_dump($result);exit;
-//             $data = [
-
-//                 'status'=> 200,
-//                 'message'=> 'shop saved Successfully',
-//             ];
-//             header('HTTP/1.0 200 Success');
-//             return json_encode($data);
-//         }
-//         else{
-//             $data = [
-
-//                 'status'=> 500,
-//                 'message'=> 'Internal server Error',
-//             ];
-//             header('HTTP/1.0 500 Internal server Error');
-//             return json_encode($data);
-//         }
-        
-//     }
-//     // Close the database connection
-//     $conn->close();
-// }
-
-function saveMaterialInfo($MaterialInput, $MaterialFiles, $userId){
+function saveMaterialInfo($MaterialInput, $imageInfo, $userId){
   /// Created By : Kavinda
   /// Date : 2025-02-28
  /// Description : This function is used to save Material details along with multiple images 
-    
-    
+     
     global $conn;
     
     // Generate Invoice Number
@@ -107,7 +41,7 @@ function saveMaterialInfo($MaterialInput, $MaterialFiles, $userId){
     }
 
     // 1. ප්‍රධාන Material තොරතුරු ටික සේව් කරමු
-    $query = "INSERT INTO MaterialInfo (ProcessedDate, TotalPayment, TransNo, Remarks, CreateBy, Active) 
+    $query = "INSERT INTO MaterialInfo (ProcessedDate, TotalPayment, TransNo, Remarks, CreateUser, Active) 
               VALUES ('$date', '$totalPayment', '$invoiceNo', '$remarks', '$createBy', '$active')";
 
     $result = mysqli_query($conn, $query);
@@ -116,26 +50,36 @@ function saveMaterialInfo($MaterialInput, $MaterialFiles, $userId){
         // අලුතින් Insert වුණු record එකේ ID එක ගන්න (මේක තමයි image table එකට ඕනේ වෙන්නේ)
         $last_id = mysqli_insert_id($conn);
 
-        // 2. Images හැන්ඩ්ල් කරමු (Multiple Images)
-        if(isset($MaterialFiles['image'])){
-            
-            // PHP වල Multiple files එද්දි ඒක Array එකක් විදියට එන්නේ
-            // ඒ නිසා foreach එකක් පාවිච්චි කරලා එකින් එක process කරනවා
-            foreach($MaterialFiles['image']['tmp_name'] as $key => $tmp_name){
-                
-                if(!empty($tmp_name)){
-                    $img_name = $MaterialFiles['image']['name'][$key];
+        //var_dump($imageInfo['image']);exit;
+
+        if(isset($imageInfo['image']) && !empty($imageInfo['image']['name'])) {
+
+            //var_dump($imageInfo['image']);exit;
+
+            // 1. Array එකක්ද නැද්ද කියලා check කරලා loop එකකට ගන්න පුළුවන් විදියට හදාගන්නවා
+            $files = $imageInfo['image'];
+            $file_count = is_array($files['name']) ? count($files['name']) : 1;
+        
+            for ($i = 0; $i < $file_count; $i++) {
+                // Multiple නම් index එක ගන්නවා, Single නම් null (දත්ත කෙලින්ම ගන්නවා)
+                $img_name = is_array($files['name']) ? $files['name'][$i] : $files['name'];
+                $img_name_tmp = is_array($files['tmp_name']) ? $files['tmp_name'][$i] : $files['tmp_name'];
+        
+                if (!empty($img_name)) {
                     $ext = pathinfo($img_name, PATHINFO_EXTENSION);
                     
-                    // Unique නමක් හදාගමු (time එකට අමතරව loop එකේ index එකත් දානවා පින්තූර කිහිපයක් එකම වෙලාවේ එන නිසා)
-                    $img_new = 'front_' . time() . '_' . $key . '.' . $ext;
-                    
-                    $path = "../billImage/" . $img_new;
-                    $path_db = "billImage/" . $img_new;
-
-                    if(move_uploaded_file($tmp_name, $path)){
-                        // 3. දැන් ඉමේජ් පාත් එක අනිත් table එකට සේව් කරනවා
-                        $img_query = "INSERT INTO material_images (material_id, image_path) VALUES ('$last_id', '$path_db')";
+                    // 2. අලුත් නමක් හදනවා (Unique වෙන්න time එකයි index එකයි ගන්නවා)
+                    $img_new = 'bill_' . time() . '_' . $i; 
+                    $path = "../billImage/" . $img_new . "." . $ext; 
+                    $path_db = "billImage/" . $img_new . "." . $ext;
+        
+                    // 3. Folder එකට upload කරනවා
+                    if (move_uploaded_file($img_name_tmp, $path)) {
+                        
+                        // 4. DB එකට save කරනවා (SQL Injection වලින් බේරෙන්න mysqli_real_escape_string පාවිච්චි කිරීම වඩාත් හොඳයි)
+                        $img_query = "INSERT INTO MaterialBillInfo (MateID, ImagePath, Active, CreateUser) 
+                                     VALUES ('$last_id', '$path_db', $active, $createBy)";
+                        
                         mysqli_query($conn, $img_query);
                     }
                 }
@@ -159,7 +103,103 @@ function saveMaterialInfo($MaterialInput, $MaterialFiles, $userId){
     }
 }
 
+function getMaterialInfo(){
 
+    /// Created By : Kavinda
+    /// Date : 2025-03-02
+    /// Description : This function is used to get the material details along with the associated images (if any)
+
+    global $conn;
+
+    $query = "
+         SELECT 
+            MaterialInfo.*, 
+            GROUP_CONCAT(MaterialBillInfo.ImagePath) AS ImagePaths 
+        FROM 
+            MaterialInfo 
+        LEFT JOIN 
+            MaterialBillInfo 
+        ON 
+            MaterialInfo.MID = MaterialBillInfo.MateID 
+        WHERE 
+            MaterialInfo.Active = 1 
+        GROUP BY 
+            MaterialInfo.MID 
+        ORDER BY 
+            MaterialInfo.CreatedDate DESC
+    ";
+    //var_dump($query );exit;
+
+    $result = mysqli_query($conn, $query);
+
+    
+
+    if(mysqli_num_rows($result) > 0){
+        $data = mysqli_fetch_all($result, MYSQLI_ASSOC);
+        return json_encode([
+            'status' => 200,
+            'message' => 'Material records retrieved successfully',
+            'data' => $data
+        ]);
+    } else {
+        return json_encode([
+            'status' => 404,
+            'message' => 'No active Material records found',
+            'data' => []
+        ]);
+    }
+}   
+
+function getMaterialInfoByID($shopParam){
+    /// Created By : Kavinda
+  /// Date : 2025-03-02
+ /// Description : his function is used to get the material details by ID along with the associated images (if any)
+    global $conn;
+
+    // Validate the input
+    $materialID = mysqli_real_escape_string($conn, $shopParam['MID']);
+    if (empty(trim($materialID))) {
+        return json_encode([
+            'status' => 422,
+            'message' => 'Material ID is required'
+        ]);
+    }
+
+    // Query to fetch material info by ID
+    $query = "
+        SELECT 
+            MaterialInfo.*, 
+            GROUP_CONCAT(MaterialBillInfo.ImagePath) AS ImagePaths 
+        FROM 
+            MaterialInfo 
+        LEFT JOIN 
+            MaterialBillInfo 
+        ON 
+            MaterialInfo.MID = MaterialBillInfo.MateID 
+        WHERE 
+            MaterialInfo.MID = '$materialID' 
+            AND MaterialInfo.Active = 1 
+        GROUP BY 
+            MaterialInfo.MID
+    ";
+
+    $result = mysqli_query($conn, $query);
+
+    if (mysqli_num_rows($result) > 0) {
+        $data = mysqli_fetch_assoc($result);
+        return json_encode([
+            'status' => 200,
+            'message' => 'Material record retrieved successfully',
+            'data' => $data
+        ]);
+    } else {
+        return json_encode([
+            'status' => 404,
+            'message' => 'Material record not found',
+            'data' => []
+        ]);
+    }
+}
 
 function createInvoiceNo() {
     global $conn;

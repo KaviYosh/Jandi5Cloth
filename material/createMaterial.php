@@ -24,7 +24,9 @@ if($requestMethod == 'POST'){
 
         $userData = verifyToken();; // Verify the token before proceeding 
         
-        $saveInvoice = saveMaterialInfo($_POST,$userData['uid']);
+        var_dump($_POST);exit;
+
+        $saveInvoice = saveMaterialInfo($_POST,$_FILES,$userData['uid']);
 
         //$saveInvoice = saveInfo();
 

@@ -22,11 +22,11 @@ if ($requestMethod === 'GET') {
     
     $userData = verifyToken();
 
-    if (isset($_GET['IHID'])) {   
+    if (isset($_GET['MID'])) {   
 
         $shopParam = $_GET;
         //var_dump($invoiceParam);exit;
-        echo getInvoiceListById($shopParam); 
+        echo getMaterialInfoByID($shopParam); 
         
    
     } 
@@ -34,12 +34,12 @@ if ($requestMethod === 'GET') {
     {
         $shopParam = $_GET;
 
-        echo getInvoiceListById($shopParam); 
+        echo getMaterialInfo($shopParam); 
     }
     
     else {
 
-        echo getInvoiceList(); 
+        echo getMaterialInfo(); 
     }
 
 } else {
