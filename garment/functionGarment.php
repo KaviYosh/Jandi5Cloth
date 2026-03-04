@@ -22,14 +22,12 @@ function saveGarment($shopInput,$userId){
 
     global $conn;
     
-
-
     $GarmentName=  mysqli_real_escape_string($conn,$shopInput['GarmentName']);
     $Town=  mysqli_real_escape_string($conn,$shopInput['Town']);
     $Address=  mysqli_real_escape_string($conn,$shopInput['Address']);
     $ContactNo1= mysqli_real_escape_string($conn,$shopInput['ContactNo1']);
     $ContactNo2=  mysqli_real_escape_string($conn,$shopInput['ContactNo2']);
-    $ContactNo2=  mysqli_real_escape_string($conn,$userId);
+    //$ContactNo2=  mysqli_real_escape_string($conn,$userId);
     $Active = 1;
 
    
@@ -52,7 +50,7 @@ function saveGarment($shopInput,$userId){
     }  
     else
     {
-        $query = "INSERT INTO GarmentInfo (GarmentName, Town, Address, ContactNo1, ContactNo2, CreateBy, Active) 
+        $query = "INSERT INTO GarmentInfo (GarmentName, Town, Address, ContactNo1, ContactNo2, CreateUser, Active) 
               VALUES ('$GarmentName', '$Town', '$Address', '$ContactNo1', '$ContactNo2', '$userId', '$Active')";
 
         $result = mysqli_query($conn, $query);
@@ -91,7 +89,7 @@ function deleteGarment($shopInput,$userId){
     if (empty(trim($GarmentId))) {
         return error422('Garment ID is required');
     } else {
-        $query = "UPDATE GarmentInfo SET Active = 0, ModifiedBy = '$userId', ModifiedDate = NOW() WHERE GarmentId = '$GarmentId'";
+        $query = "UPDATE GarmentInfo SET Active = 0, ModifiedBy = '$userId', ModifiedDate = NOW() WHERE GID = '$GarmentId'";
 
         $result = mysqli_query($conn, $query);
 
@@ -142,7 +140,7 @@ function updateGarment($shopInput,$userId){
         return error422('Enter contact No');
     } else {
         $query = "UPDATE GarmentInfo SET 
-                GarmentName = '$GarmentName', Town = '$Town', Address = '$Address', ContactNo1 = '$ContactNo1', ContactNo2 = '$ContactNo2', ModifiedBy = '$userId', ModifiedDate = NOW() WHERE GarmentId = '$GarmentId'";
+                GarmentName = '$GarmentName', Town = '$Town', Address = '$Address', ContactNo1 = '$ContactNo1', ContactNo2 = '$ContactNo2', ModifiedBy = '$userId', ModifiedDate = NOW() WHERE GID = '$GarmentId'";
 
         $result = mysqli_query($conn, $query);
 
@@ -178,7 +176,7 @@ function getGarmentInfo($shopInput = []){
 
     if (isset($shopInput['GarmentId'])) {
         $GarmentId = mysqli_real_escape_string($conn, $shopInput['GarmentId']);
-        $query .= " AND GarmentId = '$GarmentId'";
+        $query .= " AND GID = '$GarmentId'";
     }
 
     $result = mysqli_query($conn, $query);
