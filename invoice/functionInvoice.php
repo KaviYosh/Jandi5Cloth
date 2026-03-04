@@ -154,6 +154,7 @@ function createInvoiceNo() {
 }
 
 function getInvoiceListById($shopParam){
+    
     global $conn;
 
     if (isset($shopParam['ShopID']) && !empty($shopParam['ShopID'])) {
@@ -270,6 +271,7 @@ function getInvoiceDetail($invoiceParam){
 }
 
 function updateInvoiceInfo($data, $userId) {
+    
     global $conn;
 
     // Extract and sanitize header data
@@ -374,5 +376,74 @@ function updateInvoiceInfo($data, $userId) {
 
     return json_encode($response);
 }
+
+function deleteInvoiceInfo($data, $userId){
+
+    /// Created By : Kavinda
+    /// Date : 2026-03-04
+    /// Description : This function is to delete 
+
+    global $conn;
+
+    // Extract and sanitize header data
+    $InvoiceHedID = mysqli_real_escape_string($conn, $data['InvoiceHedID']);
+
+    if (empty(trim($InvoiceHedID))) {
+        return error422('Invoice Header ID is required');
+
+     // Start transaction
+     mysqli_begin_transaction($conn);
+
+     try{
+
+        $queryHeader = "UPDATE InvoiceHeader 
+        SET Active = 0, 
+            ModifiedBy = '$userId', 
+            ModifiedDate = NOW() 
+        WHERE IHID = '$InvoiceHedID'";
+
+        if (!mysqli_query($conn, $queryHeader)) {
+            throw new Exception("Failed to update invoice header: " . mysqli_error($conn));
+        }
+
+        $queryDetails = "UPDATE InvoiceDetails 
+        SET Active = 0, 
+            ModifiedBy = '$userId', 
+            ModifiedDate = NOW() 
+        WHERE InvoiceHedID = '$InvoiceHedID'";
+
+        if (!mysqli_query($conn, $queryDetails)) {
+            throw new Exception("Failed to update invoice details: " . mysqli_error($conn));
+        }
+
+        // Commit transaction
+        mysqli_commit($conn);
+
+        $response = [
+            'status' => 200,
+            'message' => 'Invoice deleted successfully',
+            'invoice_id' => $InvoiceHedID
+        ];
+        header('HTTP/1.0 200 OK');
+
+     }
+     catch (Exception $e) {
+        // Rollback on error
+        mysqli_rollback($conn);
+        $response = [
+            'status' => 500,
+            'message' => 'Failed to update invoice',
+            'error' => $e->getMessage()
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+    }
+
+    // Close connection
+    mysqli_close($conn);
+
+    return json_encode($response);
+
+}
+
 
 ?>
