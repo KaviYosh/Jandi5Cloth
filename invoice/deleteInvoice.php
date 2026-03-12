@@ -29,6 +29,7 @@ if($requestMethod == 'POST')
 
     if(empty($bankData))
     {  
+        //var_dump($_POST);exit;
         $deleteBank = deleteInvoiceInfo($_POST,$userData['uid']); 
     }
     else

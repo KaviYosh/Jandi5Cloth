@@ -333,10 +333,12 @@ function updateMaterialInfo($MaterialInput, $imageInfo, $userId){
     $remarks = mysqli_real_escape_string($conn, $MaterialInput['remarks']);
     $ModifiedBy = mysqli_real_escape_string($conn, $userId);
 
+    
     // Update MaterialInfo record
     $query = "UPDATE MaterialInfo SET 
              ProcessedDate = '$date', TotalPayment = '$totalPayment', Remarks = '$remarks', ModifiedBy = '$ModifiedBy' WHERE MID = '$materialID'";
     
+
     if (mysqli_query($conn, $query)) {
         
         // Handle image updates for MaterialBillInfo table
@@ -345,6 +347,8 @@ function updateMaterialInfo($MaterialInput, $imageInfo, $userId){
             $deleteQuery = "DELETE FROM MaterialBillInfo WHERE MateID = '$materialID'";
             mysqli_query($conn, $deleteQuery);
 
+
+            //var_dump($query);exit;
             // Insert new images
             $files = $imageInfo['image'];
             $file_count = is_array($files['name']) ? count($files['name']) : 1;

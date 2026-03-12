@@ -385,12 +385,14 @@ function deleteInvoiceInfo($data, $userId){
 
     global $conn;
 
+    
     // Extract and sanitize header data
     $InvoiceHedID = mysqli_real_escape_string($conn, $data['InvoiceHedID']);
 
+    
     if (empty(trim($InvoiceHedID))) {
         return error422('Invoice Header ID is required');
-
+    }
      // Start transaction
      mysqli_begin_transaction($conn);
 
@@ -406,6 +408,7 @@ function deleteInvoiceInfo($data, $userId){
             throw new Exception("Failed to update invoice header: " . mysqli_error($conn));
         }
 
+        //var_dump($queryHeader);exit;
         $queryDetails = "UPDATE InvoiceDetails 
         SET Active = 0, 
             ModifiedBy = '$userId', 
@@ -443,7 +446,7 @@ function deleteInvoiceInfo($data, $userId){
 
     return json_encode($response);
 
-}
 
+}
 
 ?>
