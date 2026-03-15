@@ -23,9 +23,8 @@ function saveShop($shopInput,$userId){
     /// Description : This function is used to save printing shop details 
 
     global $conn;
+
     
-
-
     $PShopName=  mysqli_real_escape_string($conn,$shopInput['PShopName']);
     $town=  mysqli_real_escape_string($conn,$shopInput['town']);
     $address=  mysqli_real_escape_string($conn,$shopInput['address']);
@@ -59,6 +58,7 @@ function saveShop($shopInput,$userId){
         $query = "INSERT INTO PrintShop (PShopName, town, address, contactNo1, contactNo2, CreateBy, Active) 
                   VALUES ('$PShopName', '$town', '$address', '$contactNo1', '$contactNo2', '$CreateBy', '$Active')";
         
+        //xvar_dump($query);exit;
 
         $result = mysqli_query($conn,$query);
 
@@ -109,7 +109,7 @@ function deleteShopInfo($shopParam,$userId){
     
    $PSID =  mysqli_real_escape_string($conn,$shopParam['PSID']);
   
-   if(empty(trim($id)))
+   if(empty(trim($PSID)))
    {
         return error422('Enter your Shop id');
    }
@@ -162,22 +162,22 @@ function updateShopInfo($shopParam,$userId){
    global $conn;
    
 
-   if(!isset($shopParam['id'])){
+   if(!isset($shopParam['PSID'])){
 
        return error422('Shop id not found in URL');
    }
-   elseif($shopParam['id'] == null){
+   elseif($shopParam['PSID'] == null){
        return error422('Enter your Shop id');
    }
    
 
   
-   $PShopName=  mysqli_real_escape_string($conn,$shopInput['PShopName']);
+   $PShopName=  mysqli_real_escape_string($conn,$shopParam['PShopName']);
    $PSID =  mysqli_real_escape_string($conn,$shopParam['PSID']);
-   $town=  mysqli_real_escape_string($conn,$shopInput['town']);
-   $address=  mysqli_real_escape_string($conn,$shopInput['address']);
-   $contactNo1= mysqli_real_escape_string($conn,$shopInput['contactNo1']);
-   $contactNo2=  mysqli_real_escape_string($conn,$shopInput['contactNo2']);
+   $town=  mysqli_real_escape_string($conn,$shopParam['town']);
+   $address=  mysqli_real_escape_string($conn,$shopParam['address']);
+   $contactNo1= mysqli_real_escape_string($conn,$shopParam['contactNo1']);
+   $contactNo2=  mysqli_real_escape_string($conn,$shopParam['contactNo2']);
    
 
 
@@ -240,7 +240,93 @@ function updateShopInfo($shopParam,$userId){
    }
 }
 
+function getShopById($shopParam) {
+    
+    /// Created By : Kavinda
+    /// Date : 2026-03-15
+    /// Description : This function is used to get shop details by ID
 
+    global $conn;
+
+    if (!isset($shopParam) || !is_array($shopParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($shopParam['PSID']) || empty($shopParam['PSID'])) {
+        return error422('Enter your shop Number');
+    }
+
+    $PSID = mysqli_real_escape_string($conn, $shopParam['PSID']);
+
+    $query = "SELECT * FROM PrintShop WHERE Active = 1 AND PSID = '$PSID'";
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Printing Shop Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Printing Shops Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+function getShopList() {
+    
+    /// Created By : Kavinda
+    /// Date : 2025-08-19
+    /// Description : This function is used to get shop list
+
+    global $conn;
+
+    $query = "SELECT PSID,PShopName,town,address, contactNo1, contactNo2 FROM PrintShop WHERE Active = 1 ORDER BY PSID DESC";
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Print Shop list Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Print Shops Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
 
 
 ?>

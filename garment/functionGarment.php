@@ -181,6 +181,8 @@ function getGarmentInfo($shopInput = []){
 
     $result = mysqli_query($conn, $query);
 
+    //var_dump($query);exit;
+
     if ($result) {
         $garments = [];
         while ($row = mysqli_fetch_assoc($result)) {
