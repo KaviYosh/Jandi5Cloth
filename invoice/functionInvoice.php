@@ -15,7 +15,6 @@ function error422($message){
     exit();
 }
 
-
 function saveInvoiceInfo($data,$userId) {
     global $conn;
     
@@ -447,6 +446,154 @@ function deleteInvoiceInfo($data, $userId){
     return json_encode($response);
 
 
+}
+
+function savePrtInvoiceInfo($data,$userId) {
+
+    /// Created By : Kavinda
+    /// Date : 2026-03-29
+    /// Description : This function is used to save printing Invoice details 
+
+    global $conn;
+    
+    // Generate Invoice Number
+    $invoiceNo = createPrtInvoiceNo();
+    
+    // Extract and sanitize header data
+    $PrtInvoiceNo   = $invoiceNo;
+    $PrtShopId      = mysqli_real_escape_string($conn, $data['PrtShopId']);
+    $PrtInvoiceDate = mysqli_real_escape_string($conn, $data['PrtInvoiceDate']);
+    $PrtSendAmount = (float) mysqli_real_escape_string($conn, $data['PrtSendAmount']);
+    $PrtUnitPrice      = (float) $item['PrtUnitPrice'];
+    $PrtTotalPrice = (float) $item['PrtTotalPrice'];
+    // // Delivery cost (optional, default 0.00)
+    // $DeliveryCost = isset($data['DeliveryCost']) && trim($data['DeliveryCost']) !== '' 
+    //     ? (float) mysqli_real_escape_string($conn, $data['DeliveryCost']) 
+    //     : 0.00;
+
+       
+    // Final total
+    $TotSellingDeliveCost = $ItemsTotalAmount + $DeliveryCost;
+
+    $CreateUser = $userId;
+    $Active     = 1;
+
+    // Validation
+    if (empty(trim($InvoiceNo))) {
+        return error422('Invoice No is required');
+    } elseif (empty(trim($ShopID))) {
+        return error422('Shop id is required');
+    } elseif (empty(trim($InvoiceDate))) {
+        return error422('Invoice Date is required');
+    } elseif ($ItemsTotalAmount <= 0) {
+        return error422('Items Total Amount is required');
+    }
+
+    // Start transaction
+    mysqli_begin_transaction($conn);
+
+    try {
+
+        
+
+        // Insert invoice header
+        $queryHeader = "INSERT INTO InvoiceHeader 
+            (InvoiceNo, ShopID, InvoiceDate, ItemsTotalAmount, DeliveryCost, TotSellingDeliveCost, CreateBy, Active) 
+            VALUES 
+            ('$InvoiceNo', '$ShopID', '$InvoiceDate', '$ItemsTotalAmount', '$DeliveryCost', '$TotSellingDeliveCost', '$CreateUser', '$Active')";
+
+        if (!mysqli_query($conn, $queryHeader)) {
+            throw new Exception("Failed to insert invoice header: " . mysqli_error($conn));
+        }
+        
+        // Get inserted header ID
+        $invoiceHedID = mysqli_insert_id($conn);
+
+        // Insert invoice details (expects $data['Details'] as array of line items)
+        if (!empty($data['Details']) && is_array($data['Details'])) {
+
+            foreach ($data['Details'] as $item) {
+                
+                $DesignID       = mysqli_real_escape_string($conn, $item['DesignID']);
+                $Qty            = (int) $item['Qty'];
+                $UnitPrice      = (float) $item['UnitPrice'];
+                $SellingPrice   = (float) $item['SellingPrice'];
+
+                $TotalUnitCost   = $Qty * $UnitPrice;
+                $TotalSellingCost = $Qty * $SellingPrice;
+
+                $queryDetail = "INSERT INTO InvoiceDetails 
+                    (InvoiceHedID, DesignID, Qty, UnitPrice, SellingPrice, TotalUnitCost, TotalSelingCost, Active, CreateBy) 
+                    VALUES 
+                    ('$invoiceHedID', '$DesignID', '$Qty', '$UnitPrice', '$SellingPrice', '$TotalUnitCost', '$TotalSellingCost', '$Active', '$CreateUser')";
+
+                if (!mysqli_query($conn, $queryDetail)) {
+                    throw new Exception("Failed to insert invoice detail: " . mysqli_error($conn));
+                }
+            }
+        } else {
+            throw new Exception("No invoice details provided");
+        }
+
+        // Commit transaction
+        mysqli_commit($conn);
+
+        $response = [
+            'status' => 201,
+            'message' => 'Invoice created successfully',
+            'invoice_id' => $invoiceHedID
+        ];
+        header('HTTP/1.0 201 Created');
+
+    } catch (Exception $e) {
+
+        var_dump($e);exit;
+        // Rollback on error
+        mysqli_rollback($conn);
+        $response = [
+            'status' => 500,
+            'message' => 'Failed to create invoice',
+            'error' => $e->getMessage()
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+    }
+
+    // Close connection
+    mysqli_close($conn);
+
+    return json_encode($response);
+}
+
+function createPrtInvoiceNo() {
+
+    /// Created By : Kavinda
+    /// Date : 2026-03-29
+    /// Description : This function is used to create the Print invoice number
+
+    global $conn;
+
+    // Get current year and month
+    $yearMonth = date("Y-m");
+
+    // Count how many invoices exist for this year-month
+    $query = "
+        SELECT COUNT(*) AS cnt 
+        FROM PrintInvoiceHeader 
+        WHERE DATE_FORMAT(CreatedDate, '%Y-%m') = '$yearMonth'
+    ";
+    $result = mysqli_query($conn, $query);
+
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        $seq = $row['cnt'] + 1; // Next sequence number
+    } else {
+        $seq = 1; // Default to 1 if query fails
+    }
+
+    // Format invoice number: INV-2025-09-0001
+    $invoiceNo = "PR-"."INV-" . $yearMonth . "-" . str_pad($seq, 4, "0", STR_PAD_LEFT);
+
+    return $invoiceNo;
 }
 
 ?>

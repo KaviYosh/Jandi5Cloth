@@ -14,8 +14,6 @@ function error422($message){
     exit();
 }
 
-
-
 function saveShop($shopInput,$userId){
 
     /// Created By : Kavinda
@@ -329,4 +327,4 @@ function getShopList() {
 }
 
 
-?>
+?>  
