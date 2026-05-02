@@ -326,5 +326,315 @@ function getShopList() {
     }
 }
 
+function savePrintProduction($shopInput,$userId){
+
+    /// Created By : Kavinda
+    /// Date : 2026-04-29
+    /// Description : This function is used to save Print ready design set to databased 
+
+    global $conn;
+
+     // Generate Invoice Number
+    $PrtInvoiceNo = createInvoiceNo();
+    
+    $PrtShopId=  mysqli_real_escape_string($conn,$shopInput['PrtShopId']);
+    $DesignID=  mysqli_real_escape_string($conn,$shopInput['DesignID']);
+    $PrtInvoiceDate=  mysqli_real_escape_string($conn,$shopInput['PrtInvoiceDate']);
+    $PrtSendQty= mysqli_real_escape_string($conn,$shopInput['PrtSendQty']);
+    $PrtUnitPrice=  mysqli_real_escape_string($conn,$shopInput['PrtUnitPrice']);
+    $PrtTotalPrice=  mysqli_real_escape_string($conn,$shopInput['PrtUnitPrice']);
+    $CreateBy = $userId;
+    $Active = 1;
+
+   
+
+    if(empty(trim($PrtShopId)))
+    {
+        return error422('Enter your Print Shop Name');
+    }
+    elseif(empty(trim($DesignID)))
+    {
+        return error422('Enter your Design');
+    }
+    elseif(empty(trim($PrtInvoiceDate)))
+    {
+        return error422('Enter Invoice Date');
+    }
+    elseif(empty(trim($PrtSendQty)))
+    {
+        return error422('Enter Item Qty');
+    } 
+    elseif(empty(trim($PrtUnitPrice)))
+    {
+        return error422('Enter Unit Price');
+    } 
+    else
+    {
+        //var_dump($path_db);exit;
+
+        $query = "INSERT INTO PrintInvoiceHeader (PrtInvoiceNo, PrtShopId, DesignID, PrtInvoiceDate, PrtSendQty,PrtUnitPrice,PrtTotalPrice, CreateBy, Active) 
+                  VALUES ('$PrtInvoiceNo', '$PrtShopId', '$DesignID', '$PrtInvoiceDate', '$PrtSendQty','$PrtUnitPrice','$PrtTotalPrice','$CreateBy', '$Active')";
+        
+        //xvar_dump($query);exit;
+
+        $result = mysqli_query($conn,$query);
+
+        if($result)
+        {
+            //var_dump($result);exit;
+            $data = [
+
+                'status'=> 200,
+                'message'=> 'Print ready design  saved Successfully',
+            ];
+            header('HTTP/1.0 200 Success');
+            return json_encode($data);
+        }
+        else{
+            $data = [
+
+                'status'=> 500,
+                'message'=> 'Internal server Error',
+            ];
+            header('HTTP/1.0 500 Internal server Error');
+            return json_encode($data);
+        }
+        
+    }
+    // Close the database connection
+    $conn->close();
+}
+
+function createInvoiceNo() {
+    global $conn;
+
+    // Get current year and month
+    $yearMonth = date("Y-m");
+
+    // Count how many invoices exist for this year-month
+    $query = "
+        SELECT COUNT(*) AS cnt 
+        FROM PrintInvoiceHeader 
+        WHERE DATE_FORMAT(CreatedDate, '%Y-%m') = '$yearMonth'
+    ";
+    $result = mysqli_query($conn, $query);
+
+    if ($result) {
+        $row = mysqli_fetch_assoc($result);
+        $seq = $row['cnt'] + 1; // Next sequence number
+    } else {
+        $seq = 1; // Default to 1 if query fails
+    }
+
+    // Format invoice number: INV-2025-09-0001
+    $invoiceNo = "Prt_INV-" . $yearMonth . "-" . str_pad($seq, 4, "0", STR_PAD_LEFT);
+
+    return $invoiceNo;
+}
+
+function updatePrtCompltPrdtsInfo($shopParam,$userId){
+
+    /// Created By : Kavinda
+   /// Date : 2026-04-30
+   /// Description : This function is used to update the Print complete products list
+   ///              when update this table, update the design table also
+
+   //var_dump($shopParam);exit;
+
+    //ReceivedStatus  =  1 kiyanne print ekata dapu design eka complete wela garment ekata uawanna awilla kiyana eka
+
+   global $conn;
+   
+
+   if(!isset($shopParam['PIHID'])){
+
+       return error422('Print Invoice id not found in URL');
+   }
+   elseif($shopParam['PIHID'] == null){
+       return error422('Enter your Print Invoice id');
+   }
+
+  
+   $ReceivedQty=  mysqli_real_escape_string($conn,$shopParam['ReceivedQty']);
+   $ReceivedStatus =  mysqli_real_escape_string($conn,$shopParam['ReceivedStatus']);
+   $PaidAmount=  mysqli_real_escape_string($conn,$shopParam['PaidAmount']);
+   $PaidDate=  mysqli_real_escape_string($conn,$shopParam['PaidDate']);
+   $PaidStatus= mysqli_real_escape_string($conn,$shopParam['PaidStatus']);
+   $PIHID= mysqli_real_escape_string($conn,$shopParam['PIHID']);
+   $DesignID = mysqli_real_escape_string($conn,$shopParam['DesignID']);
+
+   if(empty(trim($ReceivedQty)))
+   {
+       return error422('Enter Received Qty');
+   }
+   elseif(empty(trim($PaidAmount)))
+   {
+       return error422('Enter Paid Amount');
+   }
+   elseif(empty(trim($PaidDate)))
+   {
+       return error422('Enter Paid Date');
+   }
+   elseif(empty(trim($ReceivedStatus)))
+   {
+       return error422('Enter Received Status');
+   }
+   elseif(empty(trim($PaidStatus)))
+   {
+       return error422('Enter Paid Status');
+   }
+   elseif(empty(trim($DesignID)))
+   {
+       return error422('Enter Design ID');
+   }
+   else
+   {
+
+      mysqli_begin_transaction($conn); // 🔥 important
+
+       try {
+
+           // 1️⃣ Update PrintInvoiceHeader
+           $query1 = "UPDATE PrintInvoiceHeader 
+               SET 
+                   ReceivedQty = '$ReceivedQty', 
+                   ReceivedStatus = '$ReceivedStatus', 
+                   PaidAmount = '$PaidAmount', 
+                   PaidDate = '$PaidDate',
+                   PaidStatus = '$PaidStatus'
+               WHERE PIHID = '$PIHID'";
+
+           $result1 = mysqli_query($conn,$query1);
+
+           if(!$result1){
+               throw new Exception("Header update failed");
+           }
+
+           // 2️⃣ Update Design Table
+           // ⚠️ Design table name eka hariyata replace karanna (ex: DesignDetails / Design)
+           $query2 = "UPDATE Design 
+               SET 
+                   stock_qty = '$ReceivedQty',
+                   ProcessStatus = '$ReceivedStatus'
+               WHERE DesignID = '$DesignID'";
+
+           $result2 = mysqli_query($conn,$query2);
+
+           if(!$result2){
+               throw new Exception("Design update failed");
+           }
+
+           // 3️⃣ Commit
+           mysqli_commit($conn);
+
+           $data = [
+               'status'=> 200,
+               'message'=> 'Updated Successfully (Header + Design)',
+           ];
+           header('HTTP/1.0 200 Success');
+           return json_encode($data);
+
+       } catch (Exception $e){
+
+           mysqli_rollback($conn); // ❌ rollback if error
+
+           $data = [
+               'status'=> 500,
+               'message'=> $e->getMessage(),
+           ];
+           header('HTTP/1.0 500 Internal server Error');
+           return json_encode($data);
+       }   
+   }
+}
+
+function getShopById($shopParam) {
+    
+    /// Created By : Kavinda
+    /// Date : 2026-05-01
+    /// Description : This function is used to get print send invoice list by ID
+
+    global $conn;
+
+    if (!isset($shopParam) || !is_array($shopParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($shopParam['PIHID']) || empty($shopParam['PIHID'])) {
+        return error422('Enter Print Invoice ID');
+    }
+
+    $PIHID = mysqli_real_escape_string($conn, $shopParam['PIHID']);
+
+    $query = "SELECT * FROM PrintInvoiceHeader WHERE Active = 1 AND PIHID = '$PIHID' AND ReceivedStatus = '0'";
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Printing Invoice Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Printing Invoice Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+function getShopList() {
+    
+    /// Created By : Kavinda
+    /// Date : 2026-05-01
+    /// Description : This function is used to get print send invoice list
+
+    global $conn;
+
+    $query = "SELECT * FROM PrintInvoiceHeader WHERE Active = 1 AND ReceivedStatus = '0' ORDER BY PIHID DESC";
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Print Invoice list Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Print Invoice Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
 
 ?>  

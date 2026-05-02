@@ -50,6 +50,10 @@ function saveDesign($designInput,$imageInfo,$userId){
     $CreateUser=  $userId;
     $Active = $productStatus;
 
+    //productStatus = 1 Products ready
+    //productStatus = 2 print ready
+    //productStatus = 3 garment ready
+    //productStatus = 0 delete
 
     if(empty(trim($DesignName)))
     {
@@ -191,6 +195,12 @@ function updateDesignInfo($designInput,$imageInfo,$userId) {
 }
 
 function getDesignById($designParam) {
+
+    /// Created By : Kavinda
+   /// Date : 2026-03-29
+   /// Description : This function is used to get the sell ready design list by design id
+
+
     global $conn;
 
     if (!isset($designParam) || !is_array($designParam)) {
@@ -203,7 +213,7 @@ function getDesignById($designParam) {
 
     $designID = mysqli_real_escape_string($conn, $designParam['DesignID']);
 
-    $query = "SELECT * FROM Designs WHERE Active != 0 AND DesignID = '$designID'";
+    $query = "SELECT * FROM Designs WHERE Active = 1 AND DesignID = '$designID'";
     $query_run = mysqli_query($conn, $query);
 
     if ($query_run) {
@@ -236,9 +246,13 @@ function getDesignById($designParam) {
 
 function getDesignList(){
 
+    /// Created By : Kavinda
+   /// Date : 2026-03-29
+   /// Description : This function is used to get the sell ready design list by design list
+
     global $conn;
 
-    $query = "SELECT * FROM Designs WHERE Active != 0 ORDER BY DesignNo DESC";
+    $query = "SELECT * FROM Designs WHERE Active = 1 ORDER BY DesignNo DESC";
     $query_run = mysqli_query($conn,$query);
     
     if ($query_run){
@@ -540,7 +554,7 @@ function getPrintRdyDesignList(){
             $data = [
 
                 'status'=> 404,
-                'message'=> 'No Debtors Found',
+                'message'=> 'No Print Ready Design list Found',
             ];
             header('HTTP/1.0 404 No Design Found');
             return json_encode($data);
