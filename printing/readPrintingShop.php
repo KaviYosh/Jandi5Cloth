@@ -14,11 +14,13 @@ require '../middleware/verifyToken.php';
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
+//var_dump("ABEFGH"); exit;
+
 if ($requestMethod === 'GET') {
     
     // ✅ Capture user data from token
-//     var_dump(getallheaders());
-// exit;
+    
+
     $userData = verifyToken();
 
     if (isset($_GET['PSID'])) {        

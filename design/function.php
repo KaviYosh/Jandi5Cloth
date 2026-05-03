@@ -43,7 +43,7 @@ function saveDesign($designInput,$imageInfo,$userId){
     $DesignName =  mysqli_real_escape_string($conn,$designInput['DesignName']);
     $Description =  mysqli_real_escape_string($conn,$designInput['Description']);
     $PricePerUnit =  mysqli_real_escape_string($conn,$designInput['PricePerUnit']);
-    $DesignNo = mysqli_real_escape_string($conn,$designInput['DesignNo']);
+    //$DesignNo = mysqli_real_escape_string($conn,$designInput['DesignNo']);
     $DateAdded=  mysqli_real_escape_string($conn,$designInput['DateAdded']);
     $stock_qty=  mysqli_real_escape_string($conn,$designInput['stock_qty']);
     $productStatus = mysqli_real_escape_string($conn,$designInput['productStatus']);
@@ -54,6 +54,8 @@ function saveDesign($designInput,$imageInfo,$userId){
     //productStatus = 2 print ready
     //productStatus = 3 garment ready
     //productStatus = 0 delete
+
+   // var_dump($productStatus);exit;
 
     if(empty(trim($DesignName)))
     {
@@ -71,44 +73,71 @@ function saveDesign($designInput,$imageInfo,$userId){
     {
         return error422('Enter Date Added');
     } 
-    elseif(empty(trim($productStatus == 1)))
+    elseif($productStatus == 1 && empty(trim($stock_qty)))
     {
-        if(empty(trim($stock_qty)))
-        {
-            return error422('Stock Qty required');
-        }
-       
+        return error422('Stock Qty required');
     } 
     else
     {
-        //var_dump($path_db);exit;
+        if ($productStatus == 1){
 
-        $query = "INSERT INTO Designs (DesignName, Description,stock_qty, PricePerUnit, DateAdded, ImagePath, CreateUser, Active) 
-                  VALUES ('$DesignName', '$Description','$stock_qty' ,'$PricePerUnit', '$DateAdded', '$path_db', '$CreateUser', '$Active')";
-        
+        $query = "INSERT INTO Designs (DesignName, Description,stock_qty, PricePerUnit, DateAdded, ImagePath,ProcessStatus,CreateUser, Active) 
+                        VALUES ('$DesignName', '$Description','$stock_qty' ,'$PricePerUnit', '$DateAdded', '$path_db', '$productStatus', '$CreateUser', '$Active')";
+                
+            
+                $result = mysqli_query($conn,$query);
 
-        $result = mysqli_query($conn,$query);
+                if($result)
+                {
+                    
+                    $data = [
 
-        if($result)
-        {
-            //var_dump($result);exit;
-            $data = [
+                        'status'=> 200,
+                        'message'=> 'Design saved Successfully',
+                    ];
+                    header('HTTP/1.0 200 Success');
+                    return json_encode($data);
+                }
+                else{
+                    $data = [
 
-                'status'=> 200,
-                'message'=> 'Design saved Successfully',
-            ];
-            header('HTTP/1.0 200 Success');
-            return json_encode($data);
-        }
+                        'status'=> 500,
+                        'message'=> 'Internal server Error',
+                    ];
+                    header('HTTP/1.0 500 Internal server Error');
+                    return json_encode($data);
+                }
+
+        } 
         else{
-            $data = [
+            $query = "INSERT INTO Designs (DesignName, Description, PricePerUnit, DateAdded, ImagePath,ProcessStatus,CreateUser, Active) 
+                        VALUES ('$DesignName', '$Description', '$PricePerUnit', '$DateAdded', '$path_db', '$productStatus', '$CreateUser', '$Active')";
+                
+            
+                $result = mysqli_query($conn,$query);
 
-                'status'=> 500,
-                'message'=> 'Internal server Error',
-            ];
-            header('HTTP/1.0 500 Internal server Error');
-            return json_encode($data);
+                if($result)
+                {
+                    
+                    $data = [
+
+                        'status'=> 200,
+                        'message'=> 'Design saved Successfully',
+                    ];
+                    header('HTTP/1.0 200 Success');
+                    return json_encode($data);
+                }
+                else{
+                    $data = [
+
+                        'status'=> 500,
+                        'message'=> 'Internal server Error',
+                    ];
+                    header('HTTP/1.0 500 Internal server Error');
+                    return json_encode($data);
+                }
         }
+        
         
     }
     // Close the database connection

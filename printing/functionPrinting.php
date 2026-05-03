@@ -462,6 +462,8 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
    $PaidStatus= mysqli_real_escape_string($conn,$shopParam['PaidStatus']);
    $PIHID= mysqli_real_escape_string($conn,$shopParam['PIHID']);
    $DesignID = mysqli_real_escape_string($conn,$shopParam['DesignID']);
+   $ProcessStatus = mysqli_real_escape_string($conn,$shopParam['ProcessStatus']);
+   $ModifiedBy = $userId;
 
    if(empty(trim($ReceivedQty)))
    {
@@ -501,7 +503,8 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
                    ReceivedStatus = '$ReceivedStatus', 
                    PaidAmount = '$PaidAmount', 
                    PaidDate = '$PaidDate',
-                   PaidStatus = '$PaidStatus'
+                   PaidStatus = '$PaidStatus',
+                   ModifiedBy = '$ModifiedBy'
                WHERE PIHID = '$PIHID'";
 
            $result1 = mysqli_query($conn,$query1);
@@ -512,10 +515,11 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
 
            // 2️⃣ Update Design Table
            // ⚠️ Design table name eka hariyata replace karanna (ex: DesignDetails / Design)
-           $query2 = "UPDATE Design 
+           $query2 = "UPDATE Designs 
                SET 
                    stock_qty = '$ReceivedQty',
-                   ProcessStatus = '$ReceivedStatus'
+                   ProcessStatus = '$ProcessStatus',
+                   ModifiedBy = '$ModifiedBy'
                WHERE DesignID = '$DesignID'";
 
            $result2 = mysqli_query($conn,$query2);
@@ -548,12 +552,11 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
    }
 }
 
-function getShopById($shopParam) {
+function getPrintSndInvoiceById($shopParam) {
     
     /// Created By : Kavinda
-    /// Date : 2026-05-01
-    /// Description : This function is used to get print send invoice list by ID
-
+    /// Date : 2026-05-02
+    /// Description : This function is used to get Print section send Invoice details by ID
     global $conn;
 
     if (!isset($shopParam) || !is_array($shopParam)) {
@@ -561,12 +564,18 @@ function getShopById($shopParam) {
     }
 
     if (!isset($shopParam['PIHID']) || empty($shopParam['PIHID'])) {
-        return error422('Enter Print Invoice ID');
+        return error422('Enter your shop Number');
     }
 
-    $PIHID = mysqli_real_escape_string($conn, $shopParam['PIHID']);
+    $PSID = mysqli_real_escape_string($conn, $shopParam['PIHID']);
 
-    $query = "SELECT * FROM PrintInvoiceHeader WHERE Active = 1 AND PIHID = '$PIHID' AND ReceivedStatus = '0'";
+    $query = "SELECT PIHID,PrtInvoiceNo,PrtShopId,PrtInvoiceDate,PrtSendQty,PrtUnitPrice,PrtTotalPrice,PShopName,DesignName 
+                FROM PrintInvoiceHeader ph 
+                INNER JOIN PrintShop ps 
+                ON ph.PrtShopId = ps.PSID 
+                INNER JOIN Designs ds
+                ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.ReceivedStatus = 0 AND ph.PIHID = '$PSID' ORDER BY ph.PIHID DESC";
+
     $query_run = mysqli_query($conn, $query);
 
     if ($query_run) {
@@ -574,7 +583,7 @@ function getShopById($shopParam) {
             $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
             $data = [
                 'status'=> 200,
-                'message'=> 'Printing Invoice Fetched Successfully',
+                'message'=> 'Printing invoice Fetched Successfully',
                 'data' => $res
             ];
             header('HTTP/1.0 200 OK');
@@ -582,7 +591,7 @@ function getShopById($shopParam) {
         } else {
             $data = [
                 'status'=> 404,
-                'message'=> 'No Printing Invoice Found',
+                'message'=> 'No Printing invoice Found',
             ];
             header('HTTP/1.0 404 Not Found');
             return json_encode($data);
@@ -597,23 +606,30 @@ function getShopById($shopParam) {
     }
 }
 
-function getShopList() {
+function getPrintSndInvoice() {
     
     /// Created By : Kavinda
-    /// Date : 2026-05-01
-    /// Description : This function is used to get print send invoice list
+    /// Date : 2026-05-02
+    /// Description : This function is used to get Print section send Invoice details as a List
 
     global $conn;
 
-    $query = "SELECT * FROM PrintInvoiceHeader WHERE Active = 1 AND ReceivedStatus = '0' ORDER BY PIHID DESC";
+    $query = "SELECT PIHID,PrtInvoiceNo,PrtShopId,PrtInvoiceDate,PrtSendQty,PrtUnitPrice,PrtTotalPrice,PShopName,DesignName 
+                FROM PrintInvoiceHeader ph 
+                INNER JOIN PrintShop ps 
+                ON ph.PrtShopId = ps.PSID 
+                INNER JOIN Designs ds
+                ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.ReceivedStatus = 0 ORDER BY ph.PIHID DESC";
+    
     $query_run = mysqli_query($conn, $query);
 
     if ($query_run) {
+
         if (mysqli_num_rows($query_run) > 0) {
             $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
             $data = [
                 'status'=> 200,
-                'message'=> 'Print Invoice list Fetched Successfully',
+                'message'=> 'Print Invoices list Fetched Successfully',
                 'data' => $res
             ];
             header('HTTP/1.0 200 OK');
@@ -621,7 +637,7 @@ function getShopList() {
         } else {
             $data = [
                 'status'=> 404,
-                'message'=> 'No Print Invoice Found',
+                'message'=> 'No Print Invoices Found',
             ];
             header('HTTP/1.0 404 Not Found');
             return json_encode($data);
@@ -635,6 +651,7 @@ function getShopList() {
         return json_encode($data);
     }
 }
+
 
 
 ?>  

@@ -621,4 +621,99 @@ function getAllTotalDebit() {
     }
 }
 
+function getPrintSectTotalCost(){
+
+    /// Created By : Kavinda
+    /// Date : 2026-05-03
+    /// Description : get the Total Print Section cost details
+
+    global $conn;
+
+    try {
+       
+        $queryCredit = "SELECT Sum(PrtTotalPrice) AS TotPrintSectCost FROM PrintInvoiceHeader WHERE Active = 1";
+       
+        $queryCreditRun = mysqli_query($conn, $queryCredit);
+       
+        if ($queryCreditRun) {
+            if (mysqli_num_rows($queryCreditRun) > 0) {
+                $res = mysqli_fetch_all($queryCreditRun, MYSQLI_ASSOC);
+                $data = [
+                    'status'=> 200,
+                    'message'=> 'Total Print Section Cost Fetched Successfully',
+                    'data' => $res
+                ];
+                header('HTTP/1.0 200 OK');
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status'=> 404,
+                    'message'=> 'No Print Section Cost Found',
+                ];
+                header('HTTP/1.0 404 Not Found');
+                return json_encode($data);
+            }
+        } else {
+            throw new Exception('Database query failed.');
+        }
+        
+    } catch (Exception $e) {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error: ' . $e->getMessage(),
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+function getPrintSectTotalPayment(){
+
+    /// Created By : Kavinda
+    /// Date : 2026-05-03
+    /// Description : get the Total Print Section payment details
+
+    global $conn;
+
+    try {
+       
+        $queryCredit = "SELECT Sum(PaidAmount) AS TotPrintSectPayment FROM PrintInvoiceHeader WHERE Active = 1 AND PaidStatus = 1";
+       
+        $queryCreditRun = mysqli_query($conn, $queryCredit);
+       
+        if ($queryCreditRun) {
+            if (mysqli_num_rows($queryCreditRun) > 0) {
+                $res = mysqli_fetch_all($queryCreditRun, MYSQLI_ASSOC);
+                $data = [
+                    'status'=> 200,
+                    'message'=> 'Total Print Section Payment Fetched Successfully',
+                    'data' => $res
+                ];
+                header('HTTP/1.0 200 OK');
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status'=> 404,
+                    'message'=> 'No Print Section Payment Found',
+                ];
+                header('HTTP/1.0 404 Not Found');
+                return json_encode($data);
+            }
+        } else {
+            throw new Exception('Database query failed.');
+        }
+        
+    } catch (Exception $e) {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error: ' . $e->getMessage(),
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+
+
+
 ?>

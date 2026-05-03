@@ -32,7 +32,7 @@ if($requestMethod == 'POST')
     }
     else
     {
-        $updateShop = updatePrtCompltPrdtsInfo($shopData); 
+        $updateShop = updatePrtCompltPrdtsInfo($shopData,$userData['uid']); 
     }
     echo $updateShop;
 }

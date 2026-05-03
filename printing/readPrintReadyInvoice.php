@@ -14,7 +14,7 @@ require '../middleware/verifyToken.php';
 
 $requestMethod = $_SERVER["REQUEST_METHOD"];
 
-var_dump(1234);exit;
+///var_dump(1234);exit;
 
 if ($requestMethod === 'GET') {
     
@@ -24,7 +24,7 @@ if ($requestMethod === 'GET') {
 
     $userData = verifyToken();
 
-    if (isset($_GET['PSID'])) {        
+    if (isset($_GET['PIHID'])) {        
         $shopParam = $_GET;
         echo getPrintSndInvoiceById($shopParam); // safer: tie shop to user
         //echo getShopById($shopParam, $userData['uid']);
