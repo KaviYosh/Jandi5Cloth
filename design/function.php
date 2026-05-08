@@ -52,8 +52,15 @@ function saveDesign($designInput,$imageInfo,$userId){
 
     //productStatus = 1 Products ready
     //productStatus = 2 print ready
-    //productStatus = 3 garment ready
+    //productStatus = 3 on printing  
+    //productStatus = 4 garment ready
+    //productStatus = 5  on garment
     //productStatus = 0 delete
+   
+    
+   
+    //
+
 
    // var_dump($productStatus);exit;
 

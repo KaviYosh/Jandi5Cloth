@@ -337,13 +337,13 @@ function savePrintProduction($shopInput,$userId){
      // Generate Invoice Number
     $PrtInvoiceNo = createInvoiceNo();
     
-    $PrtShopId=  mysqli_real_escape_string($conn,$shopInput['PrtShopId']);
-    $DesignID=  mysqli_real_escape_string($conn,$shopInput['DesignID']);
-    $PrtInvoiceDate=  mysqli_real_escape_string($conn,$shopInput['PrtInvoiceDate']);
-    $PrtSendQty= mysqli_real_escape_string($conn,$shopInput['PrtSendQty']);
-    $PrtUnitPrice=  mysqli_real_escape_string($conn,$shopInput['PrtUnitPrice']);
-    $PrtTotalPrice=  mysqli_real_escape_string($conn,$shopInput['PrtUnitPrice']);
-    $CreateBy = $userId;
+    $PrtShopId = mysqli_real_escape_string($conn, $shopInput['PrtShopId'] ?? '');
+    $DesignID = mysqli_real_escape_string($conn, $shopInput['DesignID'] ?? '');
+    $PrtInvoiceDate = mysqli_real_escape_string($conn, $shopInput['PrtInvoiceDate'] ?? '');
+    $PrtSendQty = mysqli_real_escape_string($conn, $shopInput['PrtSendQty'] ?? '');
+    $PrtUnitPrice = mysqli_real_escape_string($conn, $shopInput['PrtUnitPrice'] ?? '');
+    $PrtTotalPrice = mysqli_real_escape_string($conn, $shopInput['PrtTotalPrice'] ?? '');
+    $CreateBy = mysqli_real_escape_string($conn, $userId);
     $Active = 1;
 
    
@@ -367,34 +367,62 @@ function savePrintProduction($shopInput,$userId){
     elseif(empty(trim($PrtUnitPrice)))
     {
         return error422('Enter Unit Price');
+    }
+    elseif(empty(trim($PrtTotalPrice)))
+    {
+        return error422('Enter Total Price');
     } 
     else
     {
-        //var_dump($path_db);exit;
+        mysqli_begin_transaction($conn);
 
-        $query = "INSERT INTO PrintInvoiceHeader (PrtInvoiceNo, PrtShopId, DesignID, PrtInvoiceDate, PrtSendQty,PrtUnitPrice,PrtTotalPrice, CreateBy, Active) 
-                  VALUES ('$PrtInvoiceNo', '$PrtShopId', '$DesignID', '$PrtInvoiceDate', '$PrtSendQty','$PrtUnitPrice','$PrtTotalPrice','$CreateBy', '$Active')";
+        $query = "INSERT INTO PrintInvoiceHeader (PrtInvoiceNo, PrtShopId, DesignID, PrtInvoiceDate, PrtSendQty, PrtUnitPrice, PrtTotalPrice, CreateBy, Active) 
+                  VALUES ('$PrtInvoiceNo', '$PrtShopId', '$DesignID', '$PrtInvoiceDate', '$PrtSendQty', '$PrtUnitPrice', '$PrtTotalPrice', '$CreateBy', '$Active')";
         
         //xvar_dump($query);exit;
 
         $result = mysqli_query($conn,$query);
 
-        if($result)
+        if(!$result)
         {
-            //var_dump($result);exit;
+            mysqli_rollback($conn);
+            $data = [
+                'status'=> 500,
+                'message'=> 'Print invoice save failed: ' . mysqli_error($conn),
+            ];
+            header('HTTP/1.0 500 Internal server Error');
+            return json_encode($data);
+        }
+
+
+           // 2️⃣ Update Design Table
+           // ⚠️ Design table name eka hariyata replace karanna (ex: DesignDetails / Design)
+           $query2 = "UPDATE Designs 
+               SET 
+                   Active = '3',
+                   ModifiedBy = '$CreateBy' 
+               WHERE DesignID = '$DesignID'";
+
+           $result2 = mysqli_query($conn,$query2);
+
+        if($result2 && mysqli_affected_rows($conn) > 0)
+        {
+            mysqli_commit($conn);
             $data = [
 
                 'status'=> 200,
-                'message'=> 'Print ready design  saved Successfully',
+                'message'=> 'Print ready design saved Successfully',
             ];
             header('HTTP/1.0 200 Success');
             return json_encode($data);
         }
         else{
+            $errorMessage = $result2 ? 'Design not found or already updated' : 'Design update failed: ' . mysqli_error($conn);
+            mysqli_rollback($conn);
             $data = [
 
                 'status'=> 500,
-                'message'=> 'Internal server Error',
+                'message'=> $errorMessage,
             ];
             header('HTTP/1.0 500 Internal server Error');
             return json_encode($data);
@@ -435,7 +463,7 @@ function createInvoiceNo() {
 function updatePrtCompltPrdtsInfo($shopParam,$userId){
 
     /// Created By : Kavinda
-   /// Date : 2026-04-30
+    /// Date : 2026-04-30
    /// Description : This function is used to update the Print complete products list
    ///              when update this table, update the design table also
 
@@ -518,6 +546,7 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
            $query2 = "UPDATE Designs 
                SET 
                    stock_qty = '$ReceivedQty',
+                   Active = '4', -- 4 kiyanne garment ready
                    ProcessStatus = '$ProcessStatus',
                    ModifiedBy = '$ModifiedBy'
                WHERE DesignID = '$DesignID'";
@@ -569,7 +598,17 @@ function getPrintSndInvoiceById($shopParam) {
 
     $PSID = mysqli_real_escape_string($conn, $shopParam['PIHID']);
 
-    $query = "SELECT PIHID,PrtInvoiceNo,PrtShopId,PrtInvoiceDate,PrtSendQty,PrtUnitPrice,PrtTotalPrice,PShopName,DesignName 
+    // $query = "SELECT PIHID,PrtInvoiceNo,PrtShopId,PrtInvoiceDate,PrtSendQty,PrtUnitPrice,PrtTotalPrice,PShopName,DesignName 
+    //             FROM PrintInvoiceHeader ph 
+    //             INNER JOIN PrintShop ps 
+    //             ON ph.PrtShopId = ps.PSID 
+    //             INNER JOIN Designs ds
+    //             ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.ReceivedStatus = 0 AND ph.PIHID = '$PSID' ORDER BY ph.PIHID DESC";
+
+
+
+          $query =  "SELECT ph.PIHID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
+                    ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus
                 FROM PrintInvoiceHeader ph 
                 INNER JOIN PrintShop ps 
                 ON ph.PrtShopId = ps.PSID 
@@ -614,7 +653,8 @@ function getPrintSndInvoice() {
 
     global $conn;
 
-    $query = "SELECT PIHID,PrtInvoiceNo,PrtShopId,PrtInvoiceDate,PrtSendQty,PrtUnitPrice,PrtTotalPrice,PShopName,DesignName 
+    $query = "SELECT ph.PIHID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
+                    ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus 
                 FROM PrintInvoiceHeader ph 
                 INNER JOIN PrintShop ps 
                 ON ph.PrtShopId = ps.PSID 
