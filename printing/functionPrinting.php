@@ -607,13 +607,14 @@ function getPrintSndInvoiceById($shopParam) {
 
 
 
-          $query =  "SELECT ph.PIHID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
+          $query =  "SELECT ph.PIHID,ph.DesignID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
+                    ph.ReceivedQty,ph.ReceivedStatus,ph.PaidAmount,ph.PaidStatus,ph.PaidStatus,ph.PaidDate,
                     ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus
                 FROM PrintInvoiceHeader ph 
                 INNER JOIN PrintShop ps 
                 ON ph.PrtShopId = ps.PSID 
                 INNER JOIN Designs ds
-                ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.ReceivedStatus = 0 AND ph.PIHID = '$PSID' ORDER BY ph.PIHID DESC";
+                ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.PIHID = '$PSID' ORDER BY ph.PIHID DESC";
 
     $query_run = mysqli_query($conn, $query);
 
@@ -653,13 +654,14 @@ function getPrintSndInvoice() {
 
     global $conn;
 
-    $query = "SELECT ph.PIHID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
-                    ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus 
+    $query = "SELECT ph.PIHID,ph.DesignID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
+                ph.ReceivedQty,ph.ReceivedStatus,ph.PaidAmount,ph.PaidStatus,ph.PaidStatus,ph.PaidDate,
+                ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus 
                 FROM PrintInvoiceHeader ph 
                 INNER JOIN PrintShop ps 
                 ON ph.PrtShopId = ps.PSID 
                 INNER JOIN Designs ds
-                ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.ReceivedStatus = 0 ORDER BY ph.PIHID DESC";
+                ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 ORDER BY ph.PIHID DESC";
     
     $query_run = mysqli_query($conn, $query);
 
