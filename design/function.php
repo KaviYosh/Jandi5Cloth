@@ -613,7 +613,112 @@ function getPrintRdyDesignList(){
 }
 
 
+function getGarmentRdyDesignById($designParam) {
 
+    /// Created By : Kavinda
+   /// Date : 2026-05-15
+   /// Description : This function is used to get the Garment ready design list by design id
+
+   //var_dump($shopParam);exit;
+
+    global $conn;
+
+    if (!isset($designParam) || !is_array($designParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($designParam['DesignID']) || empty($designParam['DesignID'])) {
+        return error422('Enter your design Number');
+    }
+
+    ///Active = 4    //productStatus = 4 garment ready
+
+
+    $designID = mysqli_real_escape_string($conn, $designParam['DesignID']);
+
+    $query = "SELECT * FROM Designs WHERE Active = 4 AND DesignID = '$designID'";
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Garment ready Designs List Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Designs Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+function getGarmentRdyDesignList(){
+
+    /// Created By : Kavinda
+   /// Date : 2026-05-15
+   /// Description : This function is used to get the garment ready design list
+   
+    global $conn;
+
+    $query = "SELECT * FROM Designs WHERE Active = 4 ORDER BY DesignNo DESC";
+    $query_run = mysqli_query($conn,$query);
+    
+    if ($query_run){
+
+        if(mysqli_num_rows($query_run) > 0 ){
+
+            $res = mysqli_fetch_all($query_run,MYSQLI_ASSOC);
+
+            $data = [
+
+                'status'=> 200,
+                'message'=> 'Garment Ready Design List Fetched Sucessfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK ');
+            return json_encode($data);
+
+        }else
+        {
+            $data = [
+
+                'status'=> 404,
+                'message'=> 'No Garment Ready Design list Found',
+            ];
+            header('HTTP/1.0 404 No Design Found');
+            return json_encode($data);
+
+        }
+
+    }
+    else{
+        
+        $data = [
+
+            'status'=> 500,
+            'message'=> 'Internal server Error',
+        ];
+        header('HTTP/1.0 500 Internal server Error');
+        return json_encode($data);
+
+    }
+
+}
 
 ///////////////////////////////// Salli Poli App function
 

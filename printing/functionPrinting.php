@@ -343,6 +343,7 @@ function savePrintProduction($shopInput,$userId){
     $PrtSendQty = mysqli_real_escape_string($conn, $shopInput['PrtSendQty'] ?? '');
     $PrtUnitPrice = mysqli_real_escape_string($conn, $shopInput['PrtUnitPrice'] ?? '');
     $PrtTotalPrice = mysqli_real_escape_string($conn, $shopInput['PrtTotalPrice'] ?? '');
+    $ProcessStatus = mysqli_real_escape_string($conn,$shopInput['ProcessStatus']);
     $CreateBy = mysqli_real_escape_string($conn, $userId);
     $Active = 1;
 
@@ -400,6 +401,7 @@ function savePrintProduction($shopInput,$userId){
            $query2 = "UPDATE Designs 
                SET 
                    Active = '3',
+                   ProcessStatus = '$ProcessStatus',
                    ModifiedBy = '$CreateBy' 
                WHERE DesignID = '$DesignID'";
 

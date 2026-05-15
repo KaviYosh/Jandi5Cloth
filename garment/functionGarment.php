@@ -216,20 +216,21 @@ function saveGarmentProduction($shopInput,$userId){
      // Generate Invoice Number
     $GartInvoiceNo = createInvoiceNo();
     
-    $GartShopId = mysqli_real_escape_string($conn, $shopInput['PrtShopId'] ?? '');
+    $GartShopId = mysqli_real_escape_string($conn, $shopInput['GartShopId'] ?? '');
     $DesignID = mysqli_real_escape_string($conn, $shopInput['DesignID'] ?? '');
-    $GartInvoiceDate = mysqli_real_escape_string($conn, $shopInput['PrtInvoiceDate'] ?? '');
-    $GartSendQty = mysqli_real_escape_string($conn, $shopInput['PrtSendQty'] ?? '');
-    $GartUnitPrice = mysqli_real_escape_string($conn, $shopInput['PrtUnitPrice'] ?? '');
-    $GartTotalPrice = mysqli_real_escape_string($conn, $shopInput['PrtTotalPrice'] ?? '');
+    $GartInvoiceDate = mysqli_real_escape_string($conn, $shopInput['GartInvoiceDate'] ?? '');
+    $GartSendQty = mysqli_real_escape_string($conn, $shopInput['GartSendQty'] ?? '');
+    $GartUnitPrice = mysqli_real_escape_string($conn, $shopInput['GartUnitPrice'] ?? '');
+    $GartTotalPrice = mysqli_real_escape_string($conn, $shopInput['GartTotalPrice'] ?? '');
+    $ProcessStatus= mysqli_real_escape_string($conn,$shopInput['ProcessStatus']);
     $CreateBy = mysqli_real_escape_string($conn, $userId);
     $Active = 1;
 
-   
+   //var_dump($GartShopId);exit;
 
     if(empty(trim($GartShopId)))
     {
-        return error422('Enter your Print Shop Name');
+        return error422('Enter your Garment Shop ID');
     }
     elseif(empty(trim($DesignID)))
     {
@@ -279,6 +280,7 @@ function saveGarmentProduction($shopInput,$userId){
            $query2 = "UPDATE Designs 
                SET 
                    Active = '5',
+                   ProcessStatus = '$ProcessStatus',
                    ModifiedBy = '$CreateBy' 
                WHERE DesignID = '$DesignID'";
 
@@ -339,7 +341,7 @@ function createInvoiceNo() {
     return $invoiceNo;
 }
 
-function updateGrtCompltPrdtsInfo($shopParam,$userId){
+function updateGrtCompletedPrdtsInfo($shopParam,$userId){
 
     /// Created By : Kavinda
     /// Date : 2026-05-13
@@ -478,23 +480,24 @@ function getGrtSendInvoiceById($shopParam) {
 
     $PSID = mysqli_real_escape_string($conn, $shopParam['GRIHID']);
 
-    // $query = "SELECT PIHID,PrtInvoiceNo,PrtShopId,PrtInvoiceDate,PrtSendQty,PrtUnitPrice,PrtTotalPrice,PShopName,DesignName 
-    //             FROM PrintInvoiceHeader ph 
-    //             INNER JOIN PrintShop ps 
-    //             ON ph.PrtShopId = ps.PSID 
-    //             INNER JOIN Designs ds
-    //             ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.ReceivedStatus = 0 AND ph.PIHID = '$PSID' ORDER BY ph.PIHID DESC";
 
+        //   $query =  "SELECT ph.PIHID,ph.DesignID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
+        //             ph.ReceivedQty,ph.ReceivedStatus,ph.PaidAmount,ph.PaidStatus,ph.PaidStatus,ph.PaidDate,
+        //             ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus
+        //         FROM PrintInvoiceHeader ph 
+        //         INNER JOIN PrintShop ps 
+        //         ON ph.PrtShopId = ps.PSID 
+        //         INNER JOIN Designs ds
+        //         ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.PIHID = '$PSID' ORDER BY ph.PIHID DESC";
 
-
-          $query =  "SELECT ph.PIHID,ph.DesignID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
-                    ph.ReceivedQty,ph.ReceivedStatus,ph.PaidAmount,ph.PaidStatus,ph.PaidStatus,ph.PaidDate,
-                    ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus
-                FROM PrintInvoiceHeader ph 
-                INNER JOIN PrintShop ps 
-                ON ph.PrtShopId = ps.PSID 
+        $query= "SELECT gh.GRIHID,gh.DesignID,gh.GartInvoiceNo,gh.GartShopId,gh.GartInvoiceDate,gh.GartSendQty,gh.GartUnitPrice,gh.GartTotalPrice,
+                    gh.ReceivedQty,gh.ReceivedStatus,gh.PaidAmount,gh.PaidStatus,gh.PaidStatus,gh.PaidDate,
+                    gi.GarmentName,ds.DesignName,gh.Active,gh.ReceivedStatus,gh.PaidStatus
+                FROM GarmentInvoiceHeader gh 
+                INNER JOIN GarmentInfo gi 
+                ON gh.GartShopId = gi.GID 
                 INNER JOIN Designs ds
-                ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.PIHID = '$PSID' ORDER BY ph.PIHID DESC";
+                ON gh.DesignID = ds.DesignID WHERE gh.Active = 1 AND gh.GRIHID = '$PSID' ORDER BY gh.GRIHID DESC";
 
     $query_run = mysqli_query($conn, $query);
 
@@ -534,14 +537,14 @@ function getGrtSendInvoice() {
 
     global $conn;
 
-    $query = "SELECT ph.PIHID,ph.DesignID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
-                ph.ReceivedQty,ph.ReceivedStatus,ph.PaidAmount,ph.PaidStatus,ph.PaidStatus,ph.PaidDate,
-                ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus 
-                FROM PrintInvoiceHeader ph 
-                INNER JOIN PrintShop ps 
-                ON ph.PrtShopId = ps.PSID 
+    $query = "SELECT gh.GRIHID,gh.DesignID,gh.GartInvoiceNo,gh.GartShopId,gh.GartInvoiceDate,gh.GartSendQty,gh.GartUnitPrice,gh.GartTotalPrice,
+                    gh.ReceivedQty,gh.ReceivedStatus,gh.PaidAmount,gh.PaidStatus,gh.PaidStatus,gh.PaidDate,
+                    gi.GarmentName,ds.DesignName,gh.Active,gh.ReceivedStatus,gh.PaidStatus
+                FROM GarmentInvoiceHeader gh 
+                INNER JOIN GarmentInfo gi 
+                ON gh.GartShopId = gi.GID 
                 INNER JOIN Designs ds
-                ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 ORDER BY ph.PIHID DESC";
+                ON gh.DesignID = ds.DesignID WHERE gh.Active = 1 ORDER BY gh.GRIHID DESC";
     
     $query_run = mysqli_query($conn, $query);
 

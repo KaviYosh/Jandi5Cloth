@@ -29,11 +29,11 @@ if($requestMethod == 'POST')
 
     if(empty($shopData))
     {  
-        $updateShop = updateGrtCompleteGrtInfo($_POST,$userData['uid']); 
+        $updateShop = updateGrtCompletedPrdtsInfo($_POST,$userData['uid']); 
     }
     else
     {
-        $updateShop = updateGrtCompleteGrtInfo($shopData,$userData['uid']); 
+        $updateShop = updateGrtCompletedPrdtsInfo($shopData,$userData['uid']); 
     }
     echo $updateShop;
 }
