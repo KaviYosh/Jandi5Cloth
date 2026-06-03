@@ -489,11 +489,11 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
    $ReceivedStatus =  mysqli_real_escape_string($conn,$shopParam['ReceivedStatus']);
    $PaidAmount=  mysqli_real_escape_string($conn,$shopParam['PaidAmount']);
    $PaidDate=  mysqli_real_escape_string($conn,$shopParam['PaidDate']);
-   $PaidStatus= mysqli_real_escape_string($conn,$shopParam['PaidStatus']);
    $PIHID= mysqli_real_escape_string($conn,$shopParam['PIHID']);
    $DesignID = mysqli_real_escape_string($conn,$shopParam['DesignID']);
    $ProcessStatus = mysqli_real_escape_string($conn,$shopParam['ProcessStatus']);
-   $ModifiedBy = $userId;
+   $Active = 1;
+   $ModifiedBy = mysqli_real_escape_string($conn,$userId);
 
    if(empty(trim($ReceivedQty)))
    {
@@ -511,10 +511,6 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
    {
        return error422('Enter Received Status');
    }
-   elseif(empty(trim($PaidStatus)))
-   {
-       return error422('Enter Paid Status');
-   }
    elseif(empty(trim($DesignID)))
    {
        return error422('Enter Design ID');
@@ -527,13 +523,31 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
        try {
 
            // 1️⃣ Update PrintInvoiceHeader
+           $invoiceQuery = "SELECT PrtUnitPrice, PrtShopId 
+               FROM PrintInvoiceHeader 
+               WHERE PIHID = '$PIHID' AND Active = 1 
+               LIMIT 1";
+
+           $invoiceResult = mysqli_query($conn,$invoiceQuery);
+
+           if(!$invoiceResult){
+               throw new Exception("Invoice details fetch failed");
+           }
+
+           if(mysqli_num_rows($invoiceResult) == 0){
+               throw new Exception("Print invoice not found");
+           }
+
+           $invoiceData = mysqli_fetch_assoc($invoiceResult);
+           $PrtUnitPrice = $invoiceData['PrtUnitPrice'];
+           $PrtShopId = $invoiceData['PrtShopId'];
+           $ReceivedQtyTotPrice = (float)$PrtUnitPrice * (float)$ReceivedQty;
+
            $query1 = "UPDATE PrintInvoiceHeader 
                SET 
                    ReceivedQty = '$ReceivedQty', 
                    ReceivedStatus = '$ReceivedStatus', 
-                   PaidAmount = '$PaidAmount', 
-                   PaidDate = '$PaidDate',
-                   PaidStatus = '$PaidStatus',
+                   ReceivedQtyTotPrice = '$ReceivedQtyTotPrice',
                    ModifiedBy = '$ModifiedBy'
                WHERE PIHID = '$PIHID'";
 
@@ -545,6 +559,15 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
 
            // 2️⃣ Update Design Table
            // ⚠️ Design table name eka hariyata replace karanna (ex: DesignDetails / Design)
+           $queryPay = "INSERT INTO PrintProdtPayTrans (PrtShopId, PaidAmount, PaidDate,Active,CreateBy) 
+               VALUES ('$PrtShopId', '$PaidAmount', '$PaidDate','$Active','$ModifiedBy')";
+
+           $resultPay = mysqli_query($conn,$queryPay);
+
+           if(!$resultPay){
+               throw new Exception("Payment transaction insert failed");
+           }
+
            $query2 = "UPDATE Designs 
                SET 
                    stock_qty = '$ReceivedQty',

@@ -37,7 +37,7 @@ if($requestMethod == 'POST'){
         
         //var_dump(1234);exit;
         
-        $saveInvoice = saveMaterialInfo($_POST, $userData['uid']);
+        $saveInvoice = saveMaterialInfo($inputData, $_FILES, $userData['uid']);
 
        // $saveDebtors = saveDebtors($inputData);
         
