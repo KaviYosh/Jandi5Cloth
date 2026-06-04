@@ -388,6 +388,84 @@ function saveChequePaymentInfo($data,$imageInfo,$userId) {
 
 }
 
+function savePrintPaymentInfo($data,$userId) {
+
+    /// Created By : Kavinda
+   /// Date : 2026-05-04
+   /// Description : Save the Print payment for an invoice
+
+    global $conn;
+    
+    //$PMID      = mysqli_real_escape_string($conn, $data['PMID']);
+    $PrtShopId = mysqli_real_escape_string($conn, $data['PrtShopId']);
+    $PaidAmount	 =  mysqli_real_escape_string($conn, $data['PaidAmount']);
+    $PaidDate = (float) mysqli_real_escape_string($conn, $data['PaidDate']);   
+    $CreateUser = $userId;
+    $Active     = 1;
+
+    // Remarks (optional, default null)
+    //$Remarks = isset($data['Remarks']) && trim($data['Remarks']) !== '' ? mysqli_real_escape_string($conn, $data['Remarks']) : null;
+
+
+    // Validation
+    if (empty(trim($PrtShopId))) {
+        return error422('Print Shop ID is required');
+    } elseif (empty(trim($PaidAmount))) {
+        return error422('Paid Amount is required');
+    } elseif (empty(trim($PaidDate))) {
+        return error422('Paid Date is required');
+    } elseif ($PaidAmount <= 0) {
+        return error422('Paid Amount is required');
+    }
+    
+    // Start transaction
+    mysqli_begin_transaction($conn);
+
+    try {
+        $nextId = getNextPrtHeaderId();
+        $PrtPayRefNo = createPrintRefNo($nextId);
+
+        // Insert Pay header
+        $queryHeader = "INSERT INTO PrintProdtPayTrans 
+            (PrtShopId,PrtPayRefNo, PaidAmount, PaidDate,CreateBy, Active) 
+            VALUES 
+            ('$PrtShopId','$PrtPayRefNo', '$PaidAmount', '$PaidDate','$CreateUser', '$Active')";
+
+
+        if (!mysqli_query($conn, $queryHeader)) {
+            throw new Exception("Failed to insert Pay header: " . mysqli_error($conn));
+        }
+        
+        // Commit transaction
+        mysqli_commit($conn);
+
+        $response = [
+            'status' => 201,
+            'message' => 'Print Pay created successfully',
+            'pay_ref_no' => $PrtPayRefNo
+        ];
+        header('HTTP/1.0 201 Created');
+
+    } catch (Exception $e) {
+
+        var_dump($e);exit;
+        // Rollback on error
+        mysqli_rollback($conn);
+        $response = [
+            'status' => 500,
+            'message' => 'Failed to create Payment',
+            'error' => $e->getMessage()
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+    }
+
+    // Close connection
+    mysqli_close($conn);
+
+    return json_encode($response);
+}
+
+
 function getNextPayHeaderId() {
     /// Created By : Kavinda
     /// Date : 2025-11-06
@@ -396,6 +474,25 @@ function getNextPayHeaderId() {
     global $conn;
 
     $queryNextId = "SELECT MAX(PHID) AS last_id FROM PayHeader";
+    $resultNextId = mysqli_query($conn, $queryNextId);
+
+    if ($resultNextId) {
+        $row = mysqli_fetch_assoc($resultNextId);
+        $nextId = isset($row['last_id']) ? $row['last_id'] + 1 : 1; // If no rows, start with 1
+        return $nextId;
+    } else {
+        throw new Exception("Failed to retrieve the next PayHeader ID: " . mysqli_error($conn));
+    }
+}
+
+function getNextPrtHeaderId() {
+    /// Created By : Kavinda
+    /// Date : 2026-06-04
+    /// Description : Get the next PayHeader ID
+
+    global $conn;
+
+    $queryNextId = "SELECT MAX(PPTID) AS last_id FROM PrintProdtPayTrans";
     $resultNextId = mysqli_query($conn, $queryNextId);
 
     if ($resultNextId) {
@@ -418,6 +515,21 @@ function createPaymentRefNo($nextId) {
 
     // Format invoice number: INV-2025-09-0001
     $invoiceNo = "Pay-" . $yearMonth . "-" . str_pad($nextId, 5, "0", STR_PAD_LEFT);
+
+    return $invoiceNo;
+}
+
+function createPrintRefNo($nextId) {
+    global $conn;
+
+    // Get current year and month
+    $yearMonth = date("Y-m");
+
+    // Count how many invoices exist for this year-month
+    
+
+    // Format invoice number: INV-2025-09-0001
+    $invoiceNo = "Prt-Pay-" . $yearMonth . "-" . str_pad($nextId, 5, "0", STR_PAD_LEFT);
 
     return $invoiceNo;
 }

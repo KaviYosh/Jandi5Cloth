@@ -487,8 +487,8 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
   
    $ReceivedQty=  mysqli_real_escape_string($conn,$shopParam['ReceivedQty']);
    $ReceivedStatus =  mysqli_real_escape_string($conn,$shopParam['ReceivedStatus']);
-   $PaidAmount=  mysqli_real_escape_string($conn,$shopParam['PaidAmount']);
-   $PaidDate=  mysqli_real_escape_string($conn,$shopParam['PaidDate']);
+   $PaidAmount=  mysqli_real_escape_string($conn,$shopParam['PaidAmount'] ?? '');
+   $PaidDate=  mysqli_real_escape_string($conn,$shopParam['PaidDate'] ?? '');
    $PIHID= mysqli_real_escape_string($conn,$shopParam['PIHID']);
    $DesignID = mysqli_real_escape_string($conn,$shopParam['DesignID']);
    $ProcessStatus = mysqli_real_escape_string($conn,$shopParam['ProcessStatus']);
@@ -503,10 +503,7 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
    {
        return error422('Enter Paid Amount');
    }
-   elseif(empty(trim($PaidDate)))
-   {
-       return error422('Enter Paid Date');
-   }
+  
    elseif(empty(trim($ReceivedStatus)))
    {
        return error422('Enter Received Status');
@@ -514,6 +511,14 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
    elseif(empty(trim($DesignID)))
    {
        return error422('Enter Design ID');
+   }
+   elseif(trim($PaidAmount) !== '' && !is_numeric($PaidAmount))
+   {
+       return error422('Paid Amount must be a number');
+   }
+   elseif(trim($PaidAmount) !== '' && (float)$PaidAmount !== 0.0 && empty(trim($PaidDate)))
+   {
+       return error422('Enter Paid Date when Paid Amount is provided');
    }
    else
    {
@@ -557,15 +562,21 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
                throw new Exception("Header update failed");
            }
 
-           // 2️⃣ Update Design Table
-           // ⚠️ Design table name eka hariyata replace karanna (ex: DesignDetails / Design)
-           $queryPay = "INSERT INTO PrintProdtPayTrans (PrtShopId, PaidAmount, PaidDate,Active,CreateBy) 
-               VALUES ('$PrtShopId', '$PaidAmount', '$PaidDate','$Active','$ModifiedBy')";
+           // 2️⃣ Insert payment only when PaidAmount is provided and not zero
+           if(trim($PaidAmount) !== '' && (float)$PaidAmount !== 0.0) {
 
-           $resultPay = mysqli_query($conn,$queryPay);
+                $nextId = getNextPrtHeaderId();
+                $PrtPayRefNo = createPrintRefNo($nextId);
 
-           if(!$resultPay){
-               throw new Exception("Payment transaction insert failed");
+
+               $queryPay = "INSERT INTO PrintProdtPayTrans (PrtShopId, PrtPayRefNo, PaidAmount, PaidDate,Active,CreateBy) 
+                   VALUES ('$PrtShopId', '$PrtPayRefNo', '$PaidAmount', '$PaidDate','$Active','$ModifiedBy')";
+
+               $resultPay = mysqli_query($conn,$queryPay);
+
+               if(!$resultPay){
+                   throw new Exception("Payment transaction insert failed");
+               }
            }
 
            $query2 = "UPDATE Designs 
@@ -719,6 +730,39 @@ function getPrintSndInvoice() {
     }
 }
 
+function getNextPrtHeaderId() {
+    /// Created By : Kavinda
+    /// Date : 2026-06-04
+    /// Description : Get the next PayHeader ID
 
+    global $conn;
+
+    $queryNextId = "SELECT MAX(PPTID) AS last_id FROM PrintProdtPayTrans";
+    $resultNextId = mysqli_query($conn, $queryNextId);
+
+    if ($resultNextId) {
+        $row = mysqli_fetch_assoc($resultNextId);
+        $nextId = isset($row['last_id']) ? $row['last_id'] + 1 : 1; // If no rows, start with 1
+        return $nextId;
+    } else {
+        throw new Exception("Failed to retrieve the next PayHeader ID: " . mysqli_error($conn));
+    }
+}
+
+
+function createPrintRefNo($nextId) {
+    global $conn;
+
+    // Get current year and month
+    $yearMonth = date("Y-m");
+
+    // Count how many invoices exist for this year-month
+    
+
+    // Format invoice number: INV-2025-09-0001
+    $invoiceNo = "Prt-Pay-" . $yearMonth . "-" . str_pad($nextId, 5, "0", STR_PAD_LEFT);
+
+    return $invoiceNo;
+}
 
 ?>  
