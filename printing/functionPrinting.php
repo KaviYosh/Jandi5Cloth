@@ -644,8 +644,7 @@ function getPrintSndInvoiceById($shopParam) {
 
 
           $query =  "SELECT ph.PIHID,ph.DesignID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
-                    ph.ReceivedQty,ph.ReceivedStatus,ph.PaidAmount,ph.PaidStatus,ph.PaidStatus,ph.PaidDate,
-                    ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus
+                ph.ReceivedQty,ph.ReceivedStatus,ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedQtyTotPrice
                 FROM PrintInvoiceHeader ph 
                 INNER JOIN PrintShop ps 
                 ON ph.PrtShopId = ps.PSID 
@@ -691,8 +690,7 @@ function getPrintSndInvoice() {
     global $conn;
 
     $query = "SELECT ph.PIHID,ph.DesignID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
-                ph.ReceivedQty,ph.ReceivedStatus,ph.PaidAmount,ph.PaidStatus,ph.PaidStatus,ph.PaidDate,
-                ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedStatus,ph.PaidStatus 
+                ph.ReceivedQty,ph.ReceivedStatus,ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedQtyTotPrice
                 FROM PrintInvoiceHeader ph 
                 INNER JOIN PrintShop ps 
                 ON ph.PrtShopId = ps.PSID 
