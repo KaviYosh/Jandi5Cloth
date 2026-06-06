@@ -499,10 +499,6 @@ function updatePrtCompltPrdtsInfo($shopParam,$userId){
    {
        return error422('Enter Received Qty');
    }
-   elseif(empty(trim($PaidAmount)))
-   {
-       return error422('Enter Paid Amount');
-   }
   
    elseif(empty(trim($ReceivedStatus)))
    {
@@ -728,6 +724,72 @@ function getPrintSndInvoice() {
     }
 }
 
+function getPrintSndInvoiceByShopId($shopParam) {
+    
+    /// Created By : Kavinda
+    /// Date : 2026-06-06
+    /// Description : This function is used to get Print section send Invoice details by Shop   ID
+    global $conn;
+
+    if (!isset($shopParam) || !is_array($shopParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($shopParam['PrtShopId']) || empty($shopParam['PrtShopId'])) {
+        return error422('Enter your Print Shop Number');
+    }
+
+    $PrtShopId = mysqli_real_escape_string($conn, $shopParam['PrtShopId']);
+
+    // $query = "SELECT PIHID,PrtInvoiceNo,PrtShopId,PrtInvoiceDate,PrtSendQty,PrtUnitPrice,PrtTotalPrice,PShopName,DesignName 
+    //             FROM PrintInvoiceHeader ph 
+    //             INNER JOIN PrintShop ps 
+    //             ON ph.PrtShopId = ps.PSID 
+    //             INNER JOIN Designs ds
+    //             ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.ReceivedStatus = 0 AND ph.PIHID = '$PSID' ORDER BY ph.PIHID DESC";
+
+
+
+          $query =  "SELECT ph.PIHID,ph.DesignID,ph.PrtInvoiceNo,ph.PrtShopId,ph.PrtInvoiceDate,ph.PrtSendQty,ph.PrtUnitPrice,ph.PrtTotalPrice,
+                ph.ReceivedQty,ph.ReceivedStatus,ps.PShopName,ds.DesignName,ph.Active,ph.ReceivedQtyTotPrice
+                FROM PrintInvoiceHeader ph 
+                INNER JOIN PrintShop ps 
+                ON ph.PrtShopId = ps.PSID 
+                INNER JOIN Designs ds
+                ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.PrtShopId = '$PrtShopId' ORDER BY ph.PIHID DESC";
+
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Printing shop invoice Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Printing shop invoice Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+
+
 function getNextPrtHeaderId() {
     /// Created By : Kavinda
     /// Date : 2026-06-04
@@ -747,7 +809,6 @@ function getNextPrtHeaderId() {
     }
 }
 
-
 function createPrintRefNo($nextId) {
     global $conn;
 
@@ -762,5 +823,9 @@ function createPrintRefNo($nextId) {
 
     return $invoiceNo;
 }
+
+
+
+
 
 ?>  

@@ -30,6 +30,13 @@ if ($requestMethod === 'GET') {
         //echo getShopById($shopParam, $userData['uid']);
    
     }
+    elseif(isset($_GET['PrtShopId']))
+    {        
+        $shopParam = $_GET;
+        echo getPrintSndInvoiceByShopId($shopParam); // safer: tie shop to user
+        //echo getShopById($shopParam, $userData['uid']);
+    }
+    
     else 
     {
         echo getPrintSndInvoice(); // return shops for this user only

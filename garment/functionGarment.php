@@ -368,35 +368,38 @@ function updateGrtCompletedPrdtsInfo($shopParam,$userId){
    $ReceivedStatus =  mysqli_real_escape_string($conn,$shopParam['ReceivedStatus']);
    $PaidAmount=  mysqli_real_escape_string($conn,$shopParam['PaidAmount']);
    $PaidDate=  mysqli_real_escape_string($conn,$shopParam['PaidDate']);
-   $PaidStatus= mysqli_real_escape_string($conn,$shopParam['PaidStatus']);
+   $ReceivedQtyTotPrice= mysqli_real_escape_string($conn,$shopParam['ReceivedQtyTotPrice']);
    $GRIHID = mysqli_real_escape_string($conn,$shopParam['GRIHID']);
    $DesignID = mysqli_real_escape_string($conn,$shopParam['DesignID']);
    $ProcessStatus = mysqli_real_escape_string($conn,$shopParam['ProcessStatus']);
+   $GartShopId = mysqli_real_escape_string($conn,$shopParam['GartShopId']);
    $ModifiedBy = $userId;
+   $Active = 1;
 
    if(empty(trim($ReceivedQty)))
    {
        return error422('Enter Received Qty');
-   }
-   elseif(empty(trim($PaidAmount)))
-   {
-       return error422('Enter Paid Amount');
-   }
-   elseif(empty(trim($PaidDate)))
-   {
-       return error422('Enter Paid Date');
-   }
+   } 
    elseif(empty(trim($ReceivedStatus)))
    {
        return error422('Enter Received Status');
-   }
-   elseif(empty(trim($PaidStatus)))
-   {
-       return error422('Enter Paid Status');
-   }
+   }   
    elseif(empty(trim($DesignID)))
    {
        return error422('Enter Design ID');
+   }
+   elseif(empty(trim($ReceivedQtyTotPrice)))
+   {
+       return error422('Enter Received Qty Total Price');
+   }
+
+   elseif(trim($PaidAmount) !== '' && !is_numeric($PaidAmount))
+   {
+       return error422('Paid Amount must be a number');
+   }
+   elseif(trim($PaidAmount) !== '' && (float)$PaidAmount !== 0.0 && empty(trim($PaidDate)))
+   {
+       return error422('Enter Paid Date when Paid Amount is provided');
    }
    else
    {
@@ -405,14 +408,13 @@ function updateGrtCompletedPrdtsInfo($shopParam,$userId){
 
        try {
 
+
            // 1️⃣ Update PrintInvoiceHeader
            $query1 = "UPDATE GarmentInvoiceHeader 
                SET 
                    ReceivedQty = '$ReceivedQty', 
                    ReceivedStatus = '$ReceivedStatus', 
-                   PaidAmount = '$PaidAmount', 
-                   PaidDate = '$PaidDate',
-                   PaidStatus = '$PaidStatus',
+                   ReceivedQtyTotPrice = '$ReceivedQtyTotPrice',
                    ModifiedBy = '$ModifiedBy'
                WHERE GRIHID  = '$GRIHID'";
 
@@ -422,7 +424,24 @@ function updateGrtCompletedPrdtsInfo($shopParam,$userId){
                throw new Exception("Header update failed");
            }
 
-           // 2️⃣ Update Design Table
+            // 2️⃣ Insert payment only when PaidAmount is provided and not zero
+           if(trim($PaidAmount) !== '' && (float)$PaidAmount !== 0.0) {
+
+                $nextId = getNextGrtHeaderId();
+                $GrtPayRefNo = createGarmentRefNo($nextId);
+
+
+               $queryPay = "INSERT INTO GartProPayTrans (GartShopId, GrtPayRefNo, PaidAmount, PaidDate,Active,CreateBy) 
+                   VALUES ('$GartShopId', '$GrtPayRefNo', '$PaidAmount', '$PaidDate','$Active','$ModifiedBy')";
+
+               $resultPay = mysqli_query($conn,$queryPay);
+
+               if(!$resultPay){
+                   throw new Exception("Payment transaction insert failed");
+               }
+           }
+
+           // 3 Update Design Table
            // ⚠️ Design table name eka hariyata replace karanna (ex: DesignDetails / Design)
            $query2 = "UPDATE Designs 
                SET 
@@ -491,8 +510,7 @@ function getGrtSendInvoiceById($shopParam) {
         //         ON ph.DesignID = ds.DesignID WHERE ph.Active = 1 AND ph.PIHID = '$PSID' ORDER BY ph.PIHID DESC";
 
         $query= "SELECT gh.GRIHID,gh.DesignID,gh.GartInvoiceNo,gh.GartShopId,gh.GartInvoiceDate,gh.GartSendQty,gh.GartUnitPrice,gh.GartTotalPrice,
-                    gh.ReceivedQty,gh.ReceivedStatus,gh.PaidAmount,gh.PaidStatus,gh.PaidStatus,gh.PaidDate,
-                    gi.GarmentName,ds.DesignName,gh.Active,gh.ReceivedStatus,gh.PaidStatus
+                gh.ReceivedQty,gh.ReceivedStatus,gi.GarmentName,ds.DesignName,gh.Active,gh.ReceivedStatus,gh.ReceivedQtyTotPrice
                 FROM GarmentInvoiceHeader gh 
                 INNER JOIN GarmentInfo gi 
                 ON gh.GartShopId = gi.GID 
@@ -538,8 +556,8 @@ function getGrtSendInvoice() {
     global $conn;
 
     $query = "SELECT gh.GRIHID,gh.DesignID,gh.GartInvoiceNo,gh.GartShopId,gh.GartInvoiceDate,gh.GartSendQty,gh.GartUnitPrice,gh.GartTotalPrice,
-                    gh.ReceivedQty,gh.ReceivedStatus,gh.PaidAmount,gh.PaidStatus,gh.PaidStatus,gh.PaidDate,
-                    gi.GarmentName,ds.DesignName,gh.Active,gh.ReceivedStatus,gh.PaidStatus
+                    gh.ReceivedQty,gh.ReceivedStatus,gh.ReceivedQtyTotPrice,
+                    gi.GarmentName,ds.DesignName,gh.Active,gh.ReceivedStatus
                 FROM GarmentInvoiceHeader gh 
                 INNER JOIN GarmentInfo gi 
                 ON gh.GartShopId = gi.GID 
@@ -576,5 +594,40 @@ function getGrtSendInvoice() {
         return json_encode($data);
     }
 }
+
+function getNextGrtHeaderId() {
+    /// Created By : Kavinda
+    /// Date : 2026-06-04
+    /// Description : Get the next PayHeader ID
+
+    global $conn;
+
+    $queryNextId = "SELECT MAX(GPTID) AS last_id FROM GartProPayTrans";
+    $resultNextId = mysqli_query($conn, $queryNextId);
+
+    if ($resultNextId) {
+        $row = mysqli_fetch_assoc($resultNextId);
+        $nextId = isset($row['last_id']) ? $row['last_id'] + 1 : 1; // If no rows, start with 1
+        return $nextId;
+    } else {
+        throw new Exception("Failed to retrieve the next PayHeader ID: " . mysqli_error($conn));
+    }
+}
+
+function createGarmentRefNo($nextId) {
+    global $conn;
+
+    // Get current year and month
+    $yearMonth = date("Y-m");
+
+    // Count how many invoices exist for this year-month
+    
+
+    // Format invoice number: INV-2025-09-0001
+    $invoiceNo = "Grt-Pay-" . $yearMonth . "-" . str_pad($nextId, 5, "0", STR_PAD_LEFT);
+
+    return $invoiceNo;
+}
+
 
 ?>
