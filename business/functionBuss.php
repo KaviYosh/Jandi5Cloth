@@ -667,7 +667,7 @@ function getPrintSectTotalCost(){
     }
 }
 
-function getPrintSectTotalPayment(){
+function getPrintSectTotalPayment($designParam){
 
     /// Created By : Kavinda
     /// Date : 2026-05-03
@@ -676,9 +676,12 @@ function getPrintSectTotalPayment(){
     global $conn;
 
     try {
+
+        $PrtShopId  = mysqli_real_escape_string($conn, $designParam['PrtShopId']);
+
        
-        $queryCredit = "SELECT Sum(PaidAmount) AS TotPrintSectPayment FROM PrintInvoiceHeader WHERE Active = 1 AND PaidStatus = 1";
-       
+        $queryCredit = "SELECT Sum(PaidAmount) AS TotPrintSectPayment FROM PrintProdtPayTrans  WHERE Active = 1 AND PrtShopId  = '$PrtShopId'";
+       //var_dump($queryCredit);exit;
         $queryCreditRun = mysqli_query($conn, $queryCredit);
        
         if ($queryCreditRun) {
@@ -686,7 +689,7 @@ function getPrintSectTotalPayment(){
                 $res = mysqli_fetch_all($queryCreditRun, MYSQLI_ASSOC);
                 $data = [
                     'status'=> 200,
-                    'message'=> 'Total Print Section Payment Fetched Successfully',
+                    'message'=> 'Total Print Shop Payment Fetched Successfully',
                     'data' => $res
                 ];
                 header('HTTP/1.0 200 OK');
@@ -694,7 +697,7 @@ function getPrintSectTotalPayment(){
             } else {
                 $data = [
                     'status'=> 404,
-                    'message'=> 'No Print Section Payment Found',
+                    'message'=> 'No Print Shop Payment Found',
                 ];
                 header('HTTP/1.0 404 Not Found');
                 return json_encode($data);
@@ -759,7 +762,7 @@ function getGarmentSectTotalCost(){
     }
 }
 
-function getGarmentSectTotalPayment(){
+function getGarmentSectTotalPayment($designParam){
 
     /// Created By : Kavinda
     /// Date : 2026-05-14
@@ -768,8 +771,10 @@ function getGarmentSectTotalPayment(){
     global $conn;
 
     try {
-       
-        $queryCredit = "SELECT Sum(PaidAmount) AS TotPrintSectPayment FROM GarmentInvoiceHeader WHERE Active = 1 AND PaidStatus = 1";
+        $GartShopId = mysqli_real_escape_string($conn, $designParam['GartShopId']);
+
+
+        $queryCredit = "SELECT Sum(PaidAmount) AS TotGarmentShopPayment FROM GartProPayTrans WHERE Active = 1 AND GartShopId = '$GartShopId'";
        
         $queryCreditRun = mysqli_query($conn, $queryCredit);
        
@@ -805,5 +810,104 @@ function getGarmentSectTotalPayment(){
     }
 }
 
+
+function getPrintShopTotalDebt($designParam){
+
+    /// Created By : Kavinda
+    /// Date : 2026-06-07
+    /// Description : get the Total Print shop debt payment details
+
+    global $conn;
+
+    try {
+
+        $PrtShopId  = mysqli_real_escape_string($conn, $designParam['PrtShopId']);
+
+       
+        $queryCredit = "SELECT Sum(ReceivedQtyTotPrice) AS TotalPrintShopDebt FROM PrintInvoiceHeader  WHERE ReceivedStatus = 1 AND PrtShopId  = '$PrtShopId'";
+       
+        $queryCreditRun = mysqli_query($conn, $queryCredit);
+       
+        if ($queryCreditRun) {
+            if (mysqli_num_rows($queryCreditRun) > 0) {
+                $res = mysqli_fetch_all($queryCreditRun, MYSQLI_ASSOC);
+                $data = [
+                    'status'=> 200,
+                    'message'=> 'Total Print Shop Debt Fetched Successfully',
+                    'data' => $res
+                ];
+                header('HTTP/1.0 200 OK');
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status'=> 404,
+                    'message'=> 'No Print Shop Debt Found',
+                ];
+                header('HTTP/1.0 404 Not Found');
+                return json_encode($data);
+            }
+        } else {
+            throw new Exception('Database query failed.');
+        }
+        
+    } catch (Exception $e) {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error: ' . $e->getMessage(),
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+
+function getGarmentShopTotalDebt($designParam){
+
+    /// Created By : Kavinda
+    /// Date : 2026-06-07
+    /// Description : get the Total garment shop debt payment details
+
+    global $conn;
+
+    try {
+
+        $GartShopId  = mysqli_real_escape_string($conn, $designParam['GartShopId']);
+
+       
+        $queryCredit = "SELECT Sum(ReceivedQtyTotPrice) AS TotalGarmentShopDebt FROM GarmentInvoiceHeader  WHERE ReceivedStatus = 1 AND GartShopId  = '$GartShopId'";
+       
+        $queryCreditRun = mysqli_query($conn, $queryCredit);
+       
+        if ($queryCreditRun) {
+            if (mysqli_num_rows($queryCreditRun) > 0) {
+                $res = mysqli_fetch_all($queryCreditRun, MYSQLI_ASSOC);
+                $data = [
+                    'status'=> 200,
+                    'message'=> 'Total Print Shop Debt Fetched Successfully',
+                    'data' => $res
+                ];
+                header('HTTP/1.0 200 OK');
+                return json_encode($data);
+            } else {
+                $data = [
+                    'status'=> 404,
+                    'message'=> 'No Print Shop Debt Found',
+                ];
+                header('HTTP/1.0 404 Not Found');
+                return json_encode($data);
+            }
+        } else {
+            throw new Exception('Database query failed.');
+        }
+        
+    } catch (Exception $e) {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error: ' . $e->getMessage(),
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
 
 ?>

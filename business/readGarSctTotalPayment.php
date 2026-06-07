@@ -19,8 +19,19 @@ if ($requestMethod === 'GET') {
     $userData = verifyToken(); // Verify the token before proceeding
 
     // If an ID is provided, fetch the specific design
-    //$designParam = $_GET; // use query parameters
-    echo getGarmentSectTotalPayment();
+    
+ if (isset($_GET['GartShopId']) && !empty($_GET['GartShopId'])) {
+        
+        // If an ID is provided, fetch the specific design
+        $designParam = $_GET; // use query parameters
+        echo getGarmentSectTotalPayment($designParam );
+    } 
+    else {
+        
+        echo "Can not find shop ID";
+    }
+
+
 
 } 
 else 

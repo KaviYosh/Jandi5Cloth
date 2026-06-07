@@ -788,8 +788,6 @@ function getPrintSndInvoiceByShopId($shopParam) {
     }
 }
 
-
-
 function getNextPrtHeaderId() {
     /// Created By : Kavinda
     /// Date : 2026-06-04
@@ -824,6 +822,59 @@ function createPrintRefNo($nextId) {
     return $invoiceNo;
 }
 
+function getPrintShopPaymentDetails($shopParam) {
+    
+    /// Created By : Kavinda
+    /// Date : 2026-05-02
+    /// Description : This function is used to get Print section send Invoice details by ID
+    global $conn;
+
+    if (!isset($shopParam) || !is_array($shopParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($shopParam['PrtShopId']) || empty($shopParam['PrtShopId'])) {
+        return error422('Enter your Print shop ID');
+    }
+
+    $PrtShopId = mysqli_real_escape_string($conn, $shopParam['PrtShopId']);
+
+    
+          $query =  "SELECT ppt.PrtShopId,ppt.PrtPayRefNo,ppt.PaidAmount,ppt.PaidDate,ps.PShopName,ps.contactNo1,ps.town
+                    FROM PrintProdtPayTrans ppt
+                    INNER JOIN PrintShop ps
+                    ON ppt.PrtShopId = ps.PSID
+                    WHERE ppt.PrtShopId = '$PrtShopId' AND ppt.Active = 1";
+
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Printing Shop Payment Details Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Printing Shop Payment Details Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
 
 
 

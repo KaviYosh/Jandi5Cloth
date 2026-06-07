@@ -629,5 +629,61 @@ function createGarmentRefNo($nextId) {
     return $invoiceNo;
 }
 
+function getGrtShopPayDetailsById($shopParam) {
+    
+    /// Created By : Kavinda
+    /// Date : 2026-05-13
+    /// Description : This function is used to get Garment section send Invoice details by ID
+    
+    global $conn;
+
+    if (!isset($shopParam) || !is_array($shopParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($shopParam['GartShopId']) || empty($shopParam['GartShopId'])) {
+        return error422('Enter your Garment Invoice Number');
+    }
+
+    $GartShopId = mysqli_real_escape_string($conn, $shopParam['GartShopId']);
+
+
+        
+        $query= "SELECT gpt.GartShopId,gpt.GrtPayRefNo,gpt.PaidAmount,gpt.PaidDate,gi.GarmentName,gi.ContactNo1,gi.Town
+                    FROM GartProPayTrans gpt
+                    INNER JOIN GarmentInfo gi
+                    ON gpt.GartShopId = gi.GID
+                    WHERE gpt.GartShopId  = '$GartShopId' AND gpt.Active = 1";
+
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Garment Shop Payment Details Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Garment Shop Payment Details Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
 
 ?>

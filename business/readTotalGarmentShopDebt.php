@@ -18,12 +18,11 @@ $requestMethod = $_SERVER["REQUEST_METHOD"];
 if ($requestMethod === 'GET') {
     $userData = verifyToken(); // Verify the token before proceeding
 
-    //var_dump($_GET);exit;
-    if (isset($_GET['PrtShopId']) && !empty($_GET['PrtShopId'])) {
+ if (isset($_GET['GartShopId']) && !empty($_GET['GartShopId'])) {
         
         // If an ID is provided, fetch the specific design
         $designParam = $_GET; // use query parameters
-        echo getPrintSectTotalPayment($designParam);
+        echo getGarmentShopTotalDebt($designParam);
     } 
     else {
         
