@@ -30,7 +30,7 @@ if($requestMethod == 'POST')
     }
     else
     {
-        $updateShop = updateCheqPayInfo($shopData); 
+        $updateShop = updateCheqPayInfo($shopData,$_FILES,$userData['uid']); 
     }
     echo $updateShop;
 }

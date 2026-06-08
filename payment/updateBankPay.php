@@ -34,7 +34,7 @@ if($requestMethod == 'POST')
     }
     else
     {
-        $updateShop = updateBankPayInfo($shopData); 
+        $updateShop = updateBankPayInfo($shopData,$_FILES,$userData['uid']); 
     }
     echo $updateShop;
 }

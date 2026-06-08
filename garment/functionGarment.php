@@ -547,6 +547,65 @@ function getGrtSendInvoiceById($shopParam) {
     }
 }
 
+function getGrtSndInvoiceByShopId($shopParam) {
+    
+    /// Created By : Kavinda
+    /// Date : 2026-06-08
+    /// Description : This function is used to get Garment section send Invoice details Garment shop by ID
+    
+    global $conn;
+
+    if (!isset($shopParam) || !is_array($shopParam)) {
+        return error422('Invalid input data format.');
+    }
+
+    if (!isset($shopParam['GartShopId']) || empty($shopParam['GartShopId'])) {
+        return error422('Enter your Garment Shop ID');
+    }
+
+    $GartShopId = mysqli_real_escape_string($conn, $shopParam['GartShopId']);
+
+
+        $query= "SELECT gh.GRIHID,gh.DesignID,gh.GartInvoiceNo,gh.GartShopId,gh.GartInvoiceDate,gh.GartSendQty,gh.GartUnitPrice,gh.GartTotalPrice,
+                gh.ReceivedQty,gh.ReceivedStatus,gi.GarmentName,ds.DesignName,gh.Active,gh.ReceivedStatus,gh.ReceivedQtyTotPrice
+                FROM GarmentInvoiceHeader gh 
+                INNER JOIN GarmentInfo gi 
+                ON gh.GartShopId = gi.GID 
+                INNER JOIN Designs ds
+                ON gh.DesignID = ds.DesignID WHERE gh.Active = 1 AND gh.GartShopId = '$GartShopId' ORDER BY gh.GRIHID DESC";
+
+    $query_run = mysqli_query($conn, $query);
+
+    if ($query_run) {
+        if (mysqli_num_rows($query_run) > 0) {
+            $res = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+            $data = [
+                'status'=> 200,
+                'message'=> 'Garment shop invoice Fetched Successfully',
+                'data' => $res
+            ];
+            header('HTTP/1.0 200 OK');
+            return json_encode($data);
+        } else {
+            $data = [
+                'status'=> 404,
+                'message'=> 'No Garment shop invoice Found',
+            ];
+            header('HTTP/1.0 404 Not Found');
+            return json_encode($data);
+        }
+    } else {
+        $data = [
+            'status'=> 500,
+            'message'=> 'Internal Server Error',
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($data);
+    }
+}
+
+
+
 function getGrtSendInvoice() {
     
     /// Created By : Kavinda

@@ -19,20 +19,22 @@ $requestMethod = $_SERVER["REQUEST_METHOD"];
 
 if($requestMethod == 'POST')
 {
-
-    //var_dump(1234556);exit;
+   
     $shopData = json_decode(file_get_contents("php://input"),true);
     
     $userData = verifyToken();
-    //$shopData['UserID'] = $userData['uid']; 
-
+  
     if(empty($shopData))
     {  
-        $updateShop = deleteChqPay($_POST,$userData['uid']); 
+        //var_dump($_POST);exit;
+
+        $updateShop = updatePrintPayInfo($_POST,$userData['uid']); 
+
+        
     }
     else
     {
-        $updateShop = deleteChqPay($shopData,$userData['uid']); 
+        $updateShop = updatePrintPayInfo($shopData,$userData['uid']); 
     }
     echo $updateShop;
 }

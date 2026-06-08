@@ -32,7 +32,7 @@ if($requestMethod == 'POST')
     }
     else
     {
-        $updateShop = deleteBankInfo($shopData); 
+        $updateShop = deleteBankInfo($shopData,$userData['uid']); 
     }
     echo $updateShop;
 }

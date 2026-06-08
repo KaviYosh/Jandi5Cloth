@@ -864,6 +864,131 @@ function deleteChqPay($data, $userId) {
     }
 }
 
+function deletePrintPayInfo($data, $userId) {
+
+    /// Created By : Kavinda
+    /// Date : 2026-06-08
+    /// Description : Delete the Print Pay Info
+
+    global $conn;
+
+    if (!isset($data['PPTID'])) {
+        return error422('PPTID not found in request');
+    } elseif ($data['PPTID'] == null) {
+        return error422('PPTID is required');
+    }
+
+    $id = mysqli_real_escape_string($conn, $data['PPTID']);
+
+    if (empty(trim($id))) {
+        return error422('PPTID cannot be empty');
+    }
+
+    // Start transaction
+    mysqli_begin_transaction($conn);
+
+    try {
+        // Update PrintProdtPayTrans table
+        $queryPayHeader = "UPDATE PrintProdtPayTrans 
+            SET 
+                Active = 0,
+                ModifiedBy = '$userId',
+                ModifiedDate = NOW()
+            WHERE 
+                PPTID = '$id'";
+
+        if (!mysqli_query($conn, $queryPayHeader)) {
+            throw new Exception("Failed to update PrintProdtPayTrans: " . mysqli_error($conn));
+        }
+
+        
+        // Commit transaction
+        mysqli_commit($conn);
+
+        $response = [
+            'status' => 200,
+            'message' => 'Printshop payment Info deleted successfully',
+        ];
+        header('HTTP/1.0 200 Success');
+        return json_encode($response);
+
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        mysqli_rollback($conn);
+
+        $response = [
+            'status' => 500,
+            'message' => 'Failed to delete Printshop Pay Info',
+            'error' => $e->getMessage()
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($response);
+    }
+}
+
+function deleteGarmentPayInfo($data, $userId) {
+
+    /// Created By : Kavinda
+    /// Date : 2026-06-08
+    /// Description : Delete the Garment Pay Info
+
+    global $conn;
+
+    if (!isset($data['GPTID'])) {
+        return error422('GPTID not found in request');
+    } elseif ($data['GPTID'] == null) {
+        return error422('GPTID is required');
+    }
+
+    $id = mysqli_real_escape_string($conn, $data['GPTID']);
+
+    if (empty(trim($id))) {
+        return error422('GPTID cannot be empty');
+    }
+
+    // Start transaction
+    mysqli_begin_transaction($conn);
+
+    try {
+        // Update GarmentPayTrans table
+        $queryPayHeader = "UPDATE GartProPayTrans 
+            SET 
+                Active = 0,
+                ModifiedBy = '$userId',
+                ModifiedDate = NOW()
+            WHERE 
+                GPTID = '$id'";
+
+        if (!mysqli_query($conn, $queryPayHeader)) {
+            throw new Exception("Failed to update GarmentPayTrans: " . mysqli_error($conn));
+        }
+
+        
+        // Commit transaction
+        mysqli_commit($conn);
+
+        $response = [
+            'status' => 200,
+            'message' => 'Garment payment Info deleted successfully',
+        ];
+        header('HTTP/1.0 200 Success');
+        return json_encode($response);
+
+    } catch (Exception $e) {
+        // Rollback transaction on error
+        mysqli_rollback($conn);
+
+        $response = [
+            'status' => 500,
+            'message' => 'Failed to delete Garment Pay Info',
+            'error' => $e->getMessage()
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+        return json_encode($response);
+    }
+}
+
+
 function updateCashPayInfo($data,$userId)
 {
     /// Created By : Kavinda
@@ -941,7 +1066,7 @@ function updateCashPayInfo($data,$userId)
 
     } catch (Exception $e) {
 
-        var_dump($e);exit;
+        //var_dump($e);exit;
         // Rollback on error
         mysqli_rollback($conn);
         $response = [
@@ -1066,7 +1191,7 @@ function updateBankPayInfo($data,$imageInfo,$userId) {
 
     } catch (Exception $e) {
 
-        var_dump($e);exit;
+        //var_dump($e);exit;
         // Rollback on error
         mysqli_rollback($conn);
         $response = [
@@ -1205,7 +1330,7 @@ function updateCheqPayInfo($data,$imageInfo,$userId) {
 
     } catch (Exception $e) {
 
-        var_dump($e);exit;
+        //var_dump($e);exit;
         // Rollback on error
         mysqli_rollback($conn);
         $response = [
@@ -1301,6 +1426,160 @@ function updateChqPayStatus($data, $userId) {
         return json_encode($response);
     }
 }
+
+function updatePrintPayInfo($data,$userId)
+{
+    /// Created By : Kavinda
+    /// Date : 2026-06-08
+    /// Description : Update the Print Pay Info
+
+    global $conn;
+    
+    $PPTID      = mysqli_real_escape_string($conn, $data['PPTID']);
+    $PrtShopId = mysqli_real_escape_string($conn, $data['PrtShopId']);
+    $PaidDate =  mysqli_real_escape_string($conn, $data['PaidDate']);
+    $PaidAmount = (float) mysqli_real_escape_string($conn, $data['PaidAmount']);
+    $ModifiedBy = $userId;
+    //$Active     = 1;
+
+    // Remarks (optional, default null)
+    //$Remarks = isset($data['Remarks']) && trim($data['Remarks']) !== '' ? mysqli_real_escape_string($conn, $data['Remarks']) : null;
+
+    // Validation
+    if (empty(trim($PrtShopId))) {
+        return error422('Print Shop ID is required');
+    } elseif (empty(trim($PaidDate))) {
+        return error422('Paid Date is required');
+    } elseif ($PaidAmount <= 0) {
+        return error422('Paid Amount is required');
+    }
+
+    // Start transaction
+    mysqli_begin_transaction($conn);
+
+    try {
+
+        // Update PrintProdtPayTrans table
+        $queryHeader = "UPDATE PrintProdtPayTrans 
+            SET 
+            PrtShopId = '$PrtShopId',
+            PaidDate = '$PaidDate',
+            PaidAmount = '$PaidAmount',
+            ModifiedBy = '$ModifiedBy',
+            ModifiedDate = NOW()
+            WHERE 
+            PPTID = '$PPTID'";
+
+        if (!mysqli_query($conn, $queryHeader)) {
+            throw new Exception("Failed to update Print Pay header: " . mysqli_error($conn));
+        }
+
+        // Commit transaction
+        mysqli_commit($conn);
+
+        $response = [
+            'status' => 201,
+            'message' => 'Print Pay Update successfully',
+            //'pay_id' => $payID
+        ];
+        header('HTTP/1.0 201 Created');
+
+    } catch (Exception $e) {
+
+        //var_dump($e);exit;
+        // Rollback on error
+        mysqli_rollback($conn);
+        $response = [
+            'status' => 500,
+            'message' => 'Failed to create Payment',
+            'error' => $e->getMessage()
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+    }
+
+    // Close connection
+    mysqli_close($conn);
+
+    return json_encode($response);
+}
+
+
+function updateGarmentPayInfo($data,$userId)
+{
+    /// Created By : Kavinda
+    /// Date : 2026-06-08
+    /// Description : Update the Garment Pay Info
+
+    global $conn;
+    
+    $GPTID      = mysqli_real_escape_string($conn, $data['GPTID']);
+    $GartShopId = mysqli_real_escape_string($conn, $data['GartShopId']);
+    $PaidDate =  mysqli_real_escape_string($conn, $data['PaidDate']);
+    $PaidAmount = (float) mysqli_real_escape_string($conn, $data['PaidAmount']);
+    $ModifiedBy = $userId;
+    //$Active     = 1;
+
+    // Remarks (optional, default null)
+    //$Remarks = isset($data['Remarks']) && trim($data['Remarks']) !== '' ? mysqli_real_escape_string($conn, $data['Remarks']) : null;
+
+    // Validation
+    if (empty(trim($GartShopId))) {
+        return error422('Print Shop ID is required');
+    } elseif (empty(trim($PaidDate))) {
+        return error422('Paid Date is required');
+    } elseif ($PaidAmount <= 0) {
+        return error422('Paid Amount is required');
+    }
+
+    // Start transaction
+    mysqli_begin_transaction($conn);
+
+    try {
+
+        // Update GartProPayTrans table
+        $queryHeader = "UPDATE GartProPayTrans 
+            SET 
+            GartShopId = '$GartShopId',
+            PaidDate = '$PaidDate',
+            PaidAmount = '$PaidAmount',
+            ModifiedBy = '$ModifiedBy',
+            ModifiedDate = NOW()
+            WHERE 
+            GPTID = '$GPTID'";
+
+        if (!mysqli_query($conn, $queryHeader)) {
+            throw new Exception("Failed to update Garment Pay header: " . mysqli_error($conn));
+        }
+
+        // Commit transaction
+        mysqli_commit($conn);
+
+        $response = [
+            'status' => 201,
+            'message' => 'PGarment Pay Update successfully',
+            //'pay_id' => $payID
+        ];
+        header('HTTP/1.0 201 Created');
+
+    } catch (Exception $e) {
+
+        //var_dump($e);exit;
+        // Rollback on error
+        mysqli_rollback($conn);
+        $response = [
+            'status' => 500,
+            'message' => 'Failed to create Payment',
+            'error' => $e->getMessage()
+        ];
+        header('HTTP/1.0 500 Internal Server Error');
+    }
+
+    // Close connection
+    mysqli_close($conn);
+
+    return json_encode($response);
+}
+
 
 function getPendingChqInfo(){
 

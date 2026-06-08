@@ -30,7 +30,7 @@ if($requestMethod == 'POST'){
     else{
 
         $userData = verifyToken(); //Verify the token before proceeding 
-        $saveBankPayment = saveBankPaymentInfo($_POST, $userData['uid']);
+        $saveBankPayment = saveBankPaymentInfo($_POST, $_FILES,$userData['uid']);
 
     }
     echo $saveBankPayment;

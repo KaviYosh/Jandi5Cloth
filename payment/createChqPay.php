@@ -30,7 +30,7 @@ if($requestMethod == 'POST'){
     else{
 
         $userData = verifyToken(); //Verify the token before proceeding 
-        $saveChqPayment = saveChequePaymentInfo($_POST, $userData['uid']);
+        $saveChqPayment = saveChequePaymentInfo($_POST,$_FILES, $userData['uid']);
 
     }
     echo $saveChqPayment;

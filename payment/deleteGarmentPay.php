@@ -28,11 +28,11 @@ if($requestMethod == 'POST')
 
     if(empty($shopData))
     {  
-        $updateShop = deleteChqPay($_POST,$userData['uid']); 
+        $updateShop = deleteGarmentPayInfo($_POST,$userData['uid']); 
     }
     else
     {
-        $updateShop = deleteChqPay($shopData,$userData['uid']); 
+        $updateShop = deleteGarmentPayInfo($shopData,$userData['uid']); 
     }
     echo $updateShop;
 }
