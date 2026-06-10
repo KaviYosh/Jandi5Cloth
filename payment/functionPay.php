@@ -988,7 +988,6 @@ function deleteGarmentPayInfo($data, $userId) {
     }
 }
 
-
 function updateCashPayInfo($data,$userId)
 {
     /// Created By : Kavinda
@@ -1638,6 +1637,88 @@ function getPendingChqInfo(){
 
 }
 
+function getPrintPayInfo(){
 
+    /// Created By : Kavinda
+    /// Date : 2025-12-24
+    /// Description : get the print payment details
+   
+    global $conn;
+
+    $query = "SELECT ppt.PPTID,ppt.PrtShopId,ppt.PrtPayRefNo,ppt.PaidAmount,ppt.PaidDate,ps.PSID,ps.PShopName,ps.town,ps.address,ps.contactNo1 
+    FROM PrintProdtPayTrans ppt INNER JOIN PrintShop ps ON ppt.PrtShopId = ps.PSID WHERE ppt.Active = 1";
+
+     $query_run = mysqli_query($conn, $query);
+
+     //var_dump($query);exit;  
+     
+     if ($query_run) 
+     {
+         $cashPayData = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+
+         //var_dump($cashPayData);exit;  
+
+         $data = [
+             'status'=> 200,
+             'message'=> 'Print Payment Info fetched successfully',
+             'data'=> $cashPayData,
+         ];
+         header('HTTP/1.0 200 Success');
+         return json_encode($data);
+     } 
+     else {
+         $data = [
+             'status'=> 500,
+             'message'=> 'Internal Server Error',
+         ];
+         header('HTTP/1.0 500 Internal Server Error');
+         return json_encode($data);
+     }
+
+
+}
+
+function getGarmentPayInfo(){
+
+    /// Created By : Kavinda
+    /// Date : 2025-12-24
+    /// Description : get the garment payment details
+   
+    global $conn;
+
+    $query = "SELECT gpt.GPTID,gpt.GartShopId,gpt.GrtPayRefNo,gpt.PaidAmount,gpt.PaidDate,gpt.Active,gi.GID,gi.GarmentName,gi.Town,gi.Address,gi.ContactNo1
+                FROM GartProPayTrans gpt
+                INNER JOIN GarmentInfo gi
+                ON gpt.GartShopId =  gi.GID WHERE gpt.Active = 1";
+
+     $query_run = mysqli_query($conn, $query);
+
+     //var_dump($query);exit;  
+     
+     if ($query_run) 
+     {
+         $cashPayData = mysqli_fetch_all($query_run, MYSQLI_ASSOC);
+
+         //var_dump($cashPayData);exit;  
+
+         $data = [
+             'status'=> 200,
+             'message'=> 'Print Payment Info fetched successfully',
+             'data'=> $cashPayData,
+         ];
+         header('HTTP/1.0 200 Success');
+         return json_encode($data);
+     } 
+     else {
+         $data = [
+             'status'=> 500,
+             'message'=> 'Internal Server Error',
+         ];
+         header('HTTP/1.0 500 Internal Server Error');
+         return json_encode($data);
+     }
+
+
+}
 
 ?> 

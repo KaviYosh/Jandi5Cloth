@@ -708,7 +708,7 @@ function getGrtShopPayDetailsById($shopParam) {
 
 
         
-        $query= "SELECT gpt.GartShopId,gpt.GrtPayRefNo,gpt.PaidAmount,gpt.PaidDate,gi.GarmentName,gi.ContactNo1,gi.Town
+        $query= "SELECT gpt.GPTID,gpt.GartShopId,gpt.GrtPayRefNo,gpt.PaidAmount,gpt.PaidDate,gi.GarmentName,gi.ContactNo1,gi.Town
                     FROM GartProPayTrans gpt
                     INNER JOIN GarmentInfo gi
                     ON gpt.GartShopId = gi.GID

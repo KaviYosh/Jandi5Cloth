@@ -667,7 +667,7 @@ function getPrintSectTotalCost(){
     }
 }
 
-function getPrintSectTotalPayment(){
+function getPrintSectTotalPayment($designParam){
 
     /// Created By : Kavinda
     /// Date : 2026-05-03
@@ -677,10 +677,10 @@ function getPrintSectTotalPayment(){
 
     try {
 
-       // $PrtShopId  = mysqli_real_escape_string($conn, $designParam['PrtShopId']);
+        $PrtShopId  = mysqli_real_escape_string($conn, $designParam['PrtShopId']);
 
        
-        $queryCredit = "SELECT Sum(PaidAmount) AS TotPrintSectPayment FROM PrintProdtPayTrans  WHERE Active = 1";
+        $queryCredit = "SELECT Sum(PaidAmount) AS TotPrintSectPayment FROM PrintProdtPayTrans  WHERE Active = 1 AND PrtShopId  = '$PrtShopId'";
        //var_dump($queryCredit);exit;
         $queryCreditRun = mysqli_query($conn, $queryCredit);
        
@@ -762,7 +762,7 @@ function getGarmentSectTotalCost(){
     }
 }
 
-function getGarmentSectTotalPayment(){
+function getGarmentSectTotalPayment($designParam){
 
     /// Created By : Kavinda
     /// Date : 2026-05-14
@@ -771,10 +771,10 @@ function getGarmentSectTotalPayment(){
     global $conn;
 
     try {
+        $GartShopId = mysqli_real_escape_string($conn, $designParam['GartShopId']);
 
-        //$GartShopId = mysqli_real_escape_string($conn, $designParam['GartShopId']);
 
-        $queryCredit = "SELECT Sum(PaidAmount) AS TotGarmentShopPayment FROM GartProPayTrans WHERE Active = 1";
+        $queryCredit = "SELECT Sum(PaidAmount) AS TotGarmentShopPayment FROM GartProPayTrans WHERE Active = 1 AND GartShopId = '$GartShopId'";
        
         $queryCreditRun = mysqli_query($conn, $queryCredit);
        

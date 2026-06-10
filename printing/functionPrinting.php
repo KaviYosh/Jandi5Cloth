@@ -840,7 +840,7 @@ function getPrintShopPaymentDetails($shopParam) {
     $PrtShopId = mysqli_real_escape_string($conn, $shopParam['PrtShopId']);
 
     
-          $query =  "SELECT ppt.PrtShopId,ppt.PrtPayRefNo,ppt.PaidAmount,ppt.PaidDate,ps.PShopName,ps.contactNo1,ps.town
+          $query =  "SELECT ppt.PPTID,ppt.PrtShopId,ppt.PrtPayRefNo,ppt.PaidAmount,ppt.PaidDate,ps.PShopName,ps.contactNo1,ps.town
                     FROM PrintProdtPayTrans ppt
                     INNER JOIN PrintShop ps
                     ON ppt.PrtShopId = ps.PSID
